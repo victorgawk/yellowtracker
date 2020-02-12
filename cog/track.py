@@ -213,7 +213,11 @@ class Track(Cog):
                     if channel_state['type'] == TrackType.MVP:
                         entry_state['r2'] -= self.bot.config['table_refresh_rate_secs'] / 60
                 await update_channel_message(self.bot, channel_state)
-                channel = next(x for x in guild.channels if x.id == channel_state['id_channel'])
+                channel = None
+                try:
+                    channel = next(x for x in guild.channels if x.id == channel_state['id_channel'])
+                except StopIteration:
+                    pass
                 if channel is None:
                     continue
                 async for msg in channel.history(limit=100):
