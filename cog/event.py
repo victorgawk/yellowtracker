@@ -56,9 +56,24 @@ class Event(Cog):
         embed.set_footer(text=footer)
         await ctx.send(embed=embed)
 
+    async def timer(self):
+        if self.bot.ws is not None:
+            dt_now = DateUtil.get_dt_now(self.bot.tz_str)
+            evt = get_next_evt(self.bot, timezone(self.bot.tz_str))
+            str = ('WoE ' if evt['type'] == 'woe' else '') + evt['name']
+            if evt['dt_begin'] <= dt_now <= evt['dt_end']:
+                str += ' ends '
+                str += DateUtil.fmt_time_short((evt['dt_end'] - dt_now) / timedelta(milliseconds=1))
+            else:
+                str += ' '
+                str += DateUtil.fmt_time_short((evt['dt_begin'] - dt_now) / timedelta(milliseconds=1))
+            str += ' (TalonRO)'
+            game = discord.Game(name=str)
+            await self.bot.change_presence(activity=game)
+
 def get_woe_map(bot, timezone):
     dt_now = DateUtil.get_dt_now(bot.tz_str)
-    evts = get_evts_by_type(bot, timezone, 'woe')
+    evts = get_evts(bot, timezone, type='woe')
     woe_map = {}
     woe_map['ongoing'] = ''
     woe_map['next'] = ''
@@ -75,11 +90,27 @@ def get_woe_map(bot, timezone):
             woe_map['ongoing'] = format_evt(bot, evt, timezone)
         if evt['dt_begin'] <= dt_now:
             continue
-        if evt['dt_begin'] < next_evt['dt_begin']:
+        if next_evt['dt_begin'] < dt_now or evt['dt_begin'] < next_evt['dt_begin']:
             next_evt = evt
     if next_evt != None:
         woe_map['next'] = format_evt(bot, next_evt, timezone)
     return woe_map
+
+def get_next_evt(bot, timezone):
+    dt_now = DateUtil.get_dt_now(bot.tz_str)
+    evts = get_evts(bot, timezone)
+    next_evt = None
+    for evt in evts:
+        if evt['dt_end'] < dt_now:
+            continue
+        if next_evt is None:
+            next_evt = evt
+        if evt['dt_begin'] <= dt_now <= evt['dt_end']: #ongoing
+            return next_evt
+            break
+        if evt['dt_begin'] < next_evt['dt_begin']: #next
+            next_evt = evt
+    return next_evt
 
 def format_evt(bot, evt, timezone):
     dt_now = DateUtil.get_dt_now(bot.tz_str)
@@ -96,10 +127,10 @@ def format_evt(bot, evt, timezone):
     result += ')'
     return result
 
-def get_evts_by_type(bot, timezone, type):
+def get_evts(bot, timezone, type=None):
     result = []
     for evt in weekly_events:
-        if evt['type'] != type:
+        if type is not None and evt['type'] != type:
             continue
         evt_begin = evt['begin'].split(':')
         dt_evt_begin = DateUtil.get_dt_now(bot.tz_str).replace(
