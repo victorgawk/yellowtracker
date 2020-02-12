@@ -121,6 +121,7 @@ async def on_guild_remove(guild):
 
 async def timer_thread(bot):
     while True:
+        print('running timer_thread ' + str(os.getpid()))
         for extension in extensions:
             cog = bot.get_cog(extension)
             if cog is not None and hasattr(cog, 'timer'):
