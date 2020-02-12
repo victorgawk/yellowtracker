@@ -55,6 +55,8 @@ class Track(Cog):
     async def on_message(self, message):
         user = message.author
         channel = message.channel
+        if not isinstance(channel, discord.TextChannel):
+            return
         guild_state = self.bot.guild_state_map[channel.guild.id]
         channel_state = guild_state['channel_state_map'].get(channel.id)
         user_state = guild_state['user_state_map'].get(user.id)
@@ -94,7 +96,8 @@ class Track(Cog):
                 pass
             guild_state['user_state_map'][user.id] = None
 
-    @commands.command()
+    @commands.command(help='Enable/disable custom TalonRO MVP respawn times')
+    @commands.guild_only()
     @has_permissions(administrator=True)
     async def talonro(self, ctx):
         guild_state = self.bot.guild_state_map[ctx.guild.id]
@@ -110,27 +113,32 @@ class Track(Cog):
         msg += 'enabled.' if talonro else 'disabled.'
         await ctx.send(fmt_msg(msg))
 
-    @commands.command()
+    @commands.command(help='Set the MVP channel')
+    @commands.guild_only()
     @has_permissions(administrator=True)
     async def setmvpchannel(self, ctx, channel: discord.TextChannel = None):
         await set_channel(self.bot, ctx, channel, TrackType.MVP)
 
-    @commands.command()
+    @commands.command(help='Set the mining channel')
+    @commands.guild_only()
     @has_permissions(administrator=True)
     async def setminingchannel(self, ctx, channel: discord.TextChannel = None):
         await set_channel(self.bot, ctx, channel, TrackType.MINING)
 
-    @commands.command()
+    @commands.command(help='Unset the MVP channel')
+    @commands.guild_only()
     @has_permissions(administrator=True)
     async def unsetmvpchannel(self, ctx):
         await unset_channel(self.bot, ctx, TrackType.MVP)
 
-    @commands.command()
+    @commands.command(help='Unset the mining channel')
+    @commands.guild_only()
     @has_permissions(administrator=True)
     async def unsetminingchannel(self, ctx):
         await unset_channel(self.bot, ctx, TrackType.MINING)
 
-    @commands.command(aliases=['t'])
+    @commands.command(aliases=['t'], help='Track a MVP that has been defeated')
+    @commands.guild_only()
     async def track(self, ctx, *args):
         guild_state = self.bot.guild_state_map[ctx.guild.id]
         channel_state = guild_state['channel_state_map'].get(ctx.message.channel.id)

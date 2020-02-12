@@ -40,7 +40,7 @@ class Event(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(help='Show TalonRO War of Emperium times')
     async def woe(self, ctx):
         woe_map = get_woe_map(self.bot, timezone(self.bot.tz_str))
         embed = discord.Embed()
@@ -51,6 +51,24 @@ class Event(Cog):
         embed.add_field(name='Next :arrow_right:', value=woe_map['next'], inline=False)
         embed.add_field(name='Saturday', value=woe_map['saturday'], inline=False)
         embed.add_field(name='Sunday', value=woe_map['sunday'], inline=False)
+        footer = 'Server Time (' + self.bot.tz_str + '): ' 
+        footer += DateUtil.fmt_dt(DateUtil.get_dt_now(self.bot.tz_str))
+        embed.set_footer(text=footer)
+        await ctx.send(embed=embed)
+
+    @commands.command(help='Show TalonRO GM Challenge times')
+    async def gmc(self, ctx):
+        gmc_map = get_gmc_map(self.bot, timezone(self.bot.tz_str))
+        embed = discord.Embed()
+        embed.title = ':dragon_face: GMC'
+        embed.colour = discord.Colour.gold()
+        if gmc_map['ongoing'] != '':
+            embed.add_field(name='Ongoing :boom:', value=gmc_map['ongoing'], inline=False)
+        embed.add_field(name='Next :arrow_right:', value=gmc_map['next'], inline=False)
+        if gmc_map['today'] != '':
+            embed.add_field(name='Today', value=gmc_map['today'], inline=False)
+        if gmc_map['tomorrow'] != '':
+            embed.add_field(name='Tomorrow', value=gmc_map['tomorrow'], inline=False)
         footer = 'Server Time (' + self.bot.tz_str + '): ' 
         footer += DateUtil.fmt_dt(DateUtil.get_dt_now(self.bot.tz_str))
         embed.set_footer(text=footer)
@@ -70,6 +88,33 @@ class Event(Cog):
             str += ' (TalonRO)'
             game = discord.Game(name=str)
             await self.bot.change_presence(activity=game)
+
+def get_gmc_map(bot, timezone):
+    dt_now = DateUtil.get_dt_now(bot.tz_str)
+    weekday_today = dt_now.isoweekday()
+    weekday_tomorrow = 1 if weekday_today == 7 else (weekday_today + 1)
+    evts = get_evts(bot, timezone, type='gmc')
+    gmc_map = {}
+    gmc_map['ongoing'] = ''
+    gmc_map['next'] = ''
+    gmc_map['today'] = ''
+    gmc_map['tomorrow'] = ''
+    next_evt = evts[0]
+    for evt in evts:
+        str_woe = '' + format_evt(bot, evt, timezone) + '\n'
+        if int(evt['weekday']) == weekday_today:
+            gmc_map['today'] += str_woe
+        elif int(evt['weekday']) == weekday_tomorrow:
+            gmc_map['tomorrow'] += str_woe
+        if evt['dt_begin'] <= dt_now <= evt['dt_end']:
+            gmc_map['ongoing'] = format_evt(bot, evt, timezone)
+        if evt['dt_begin'] <= dt_now:
+            continue
+        if next_evt['dt_begin'] < dt_now or evt['dt_begin'] < next_evt['dt_begin']:
+            next_evt = evt
+    if next_evt != None:
+        gmc_map['next'] = format_evt(bot, next_evt, timezone)
+    return gmc_map
 
 def get_woe_map(bot, timezone):
     dt_now = DateUtil.get_dt_now(bot.tz_str)

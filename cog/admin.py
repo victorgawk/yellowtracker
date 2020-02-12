@@ -30,7 +30,8 @@ class Admin(Cog):
             '**{0.name}** left the server.'.format(member)
         )
 
-    @commands.command()
+    @commands.command(help='Set the member channel')
+    @commands.guild_only()
     @has_permissions(administrator=True)
     async def setmemberchannel(self, ctx, channel: discord.TextChannel = None):
         if channel is None:
@@ -45,7 +46,8 @@ class Admin(Cog):
             await self.bot.pool.release(conn)
         await ctx.send('Member channel set to {0.mention}.'.format(channel))
 
-    @commands.command()
+    @commands.command(help='Unset the member channel')
+    @commands.guild_only()
     @has_permissions(administrator=True)
     async def unsetmemberchannel(self, ctx):
         guild_state = self.bot.guild_state_map[ctx.guild.id]

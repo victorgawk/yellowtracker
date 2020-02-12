@@ -55,5 +55,5 @@ class DateUtil(object):
     @staticmethod
     def get_dt_now(tz_str):
         dt_now = datetime.now()
-        #dt_now = datetime(2020, 2, 16, 1, 0, 1)
+        #dt_now = datetime(2020, 2, 8, 20, 0, 1)
         return dt_now.astimezone(timezone(tz_str))
