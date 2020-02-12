@@ -444,7 +444,11 @@ async def update_channel_message(bot, channel_state):
     guild = next(x for x in bot.guilds if x.id == channel_state['id_guild'])
     if guild is None:
         return
-    channel = next(x for x in guild.channels if x.id == channel_state['id_channel'])        
+    channel = None
+    try:
+        channel = next(x for x in guild.channels if x.id == channel_state['id_channel'])
+    except:
+        pass
     if channel is None:
         return
     message = None

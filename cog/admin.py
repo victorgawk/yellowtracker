@@ -20,6 +20,8 @@ class Admin(Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
+        if self.bot.user.id == member.id:
+            return
         await send_member_message(
             self.bot,
             member.guild,
