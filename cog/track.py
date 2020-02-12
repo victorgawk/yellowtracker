@@ -24,6 +24,26 @@ class Track(Cog):
         await self.wait_load_stuff()
         conn = await self.bot.pool.acquire()
         try:
+            for guild in self.bot.guilds:
+                guild_state = self.bot.guild_state_map.get(guild.id)
+                if guild_state is None:
+                    continue
+                if guild_state['id_mvp_channel'] is not None:
+                    channel_state = {}
+                    channel_state['id_channel'] = guild_state['id_mvp_channel']
+                    channel_state['id_guild'] = guild.id
+                    channel_state['type'] = TrackType.MVP
+                    channel_state['id_message'] = None
+                    channel_state['entry_state_list'] = []
+                    guild_state['channel_state_map'][guild_state['id_mvp_channel']] = channel_state
+                if guild_state['id_mining_channel'] is not None:
+                    channel_state = {}
+                    channel_state['id_channel'] = guild_state['id_mining_channel']
+                    channel_state['id_guild'] = guild.id
+                    channel_state['type'] = TrackType.MINING
+                    channel_state['id_message'] = None
+                    channel_state['entry_state_list'] = []
+                    guild_state['channel_state_map'][guild_state['id_mining_channel']] = channel_state
             db_mvp_list = await conn.fetch('SELECT * FROM mvp')
             for db_mvp in db_mvp_list:
                 mvp_dict = dict(db_mvp)
@@ -266,14 +286,10 @@ async def set_channel(bot, ctx, channel, type):
     await init_channel(bot, channel_state)
     conn = await bot.pool.acquire()
     try:
-        entry_guild_db = await conn.fetch(
-            'SELECT * FROM channel_guild WHERE id_guild=$1 AND type=$2',
-            ctx.guild.id, type
-        )
-        write_sql = 'INSERT INTO channel_guild(id_channel,id_guild,type)VALUES($1,$2,$3)'
-        if len(entry_guild_db) > 0:
-            write_sql = 'UPDATE channel_guild SET id_channel=$1 WHERE id_guild=$2 AND type=$3'
-        await conn.execute(write_sql, channel.id, ctx.guild.id, type)
+        sql  = 'UPDATE guild '
+        sql += 'SET id_' + entry_desc_sql(type) + '_channel=$1 '
+        sql += 'WHERE id=$2'
+        await conn.execute(sql, channel.id, ctx.guild.id)
     finally:
         await bot.pool.release(conn)
     await ctx.send(fmt_msg('New ' + entry_desc(type) + ' channel set to "' + channel.name + '".'))
@@ -295,14 +311,10 @@ async def unset_channel(bot, ctx, type):
     del channel_state_map[channel_state['id_channel']]
     conn = await bot.pool.acquire()
     try:
-        await conn.execute(
-            'DELETE FROM ' + entry_desc_sql(type) + '_guild WHERE id_guild=$1',
-            ctx.guild.id
-        )
-        await conn.execute(
-            'DELETE FROM channel_guild WHERE id_guild=$1 AND type=$2',
-            ctx.guild.id, type
-        )
+        sql  = 'UPDATE guild '
+        sql += 'SET id_' + entry_desc_sql(type) + '_channel=NULL '
+        sql += 'WHERE id=$1'
+        await conn.execute(sql, ctx.guild.id)
     finally:
         await bot.pool.release(conn)
     await ctx.send(fmt_msg(entry_desc(type) + ' channel unset.'))

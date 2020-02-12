@@ -16,15 +16,10 @@ CREATE SEQUENCE mining_seq;
 CREATE TABLE guild (
     id bigint NOT NULL,
     talonro boolean NOT NULL DEFAULT TRUE,
+    id_mvp_channel bigint,
+    id_mining_channel bigint,
     id_member_channel bigint,
     CONSTRAINT guild_pk PRIMARY KEY (id)
-);
-
-CREATE TABLE channel_guild (
-    id_guild bigint NOT NULL,
-    id_channel bigint NOT NULL,
-    type integer NOT NULL,
-    CONSTRAINT channel_guild_pk PRIMARY KEY (id_guild, id_channel, type)
 );
 
 CREATE TABLE mvp (

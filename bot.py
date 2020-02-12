@@ -43,6 +43,8 @@ async def on_ready():
         guild_state = {
             'id_guild': guild.id,
             'talonro': True,
+            'id_mvp_channel': None,
+            'id_mining_channel': None,
             'id_member_channel': None,
             'user_state_map': {},
             'channel_state_map': {}
@@ -65,23 +67,14 @@ async def on_ready():
                 continue
             guild_state = bot.guild_state_map[guild.id]
             guild_state['talonro'] = db_guild['talonro']
+            guild_state['id_mvp_channel'] = db_guild['id_mvp_channel']
+            guild_state['id_mining_channel'] = db_guild['id_mining_channel']
             guild_state['id_member_channel'] = db_guild['id_member_channel']
         for db_guild in db_guild_list:
             if next((x for x in bot.guilds if x.id == db_guild['id']), None) is None:
                 await conn.execute('DELETE FROM mvp_guild WHERE id_guild=$1', db_guild['id'])
                 await conn.execute('DELETE FROM mining_guild WHERE id_guild=$1', db_guild['id'])
-                await conn.execute('DELETE FROM channel_guild WHERE id_guild=$1', db_guild['id'])
                 await conn.execute('DELETE FROM guild WHERE id=$1', db_guild['id'])
-        for guild in bot.guilds:
-            db_channel_guild_list = await conn.fetch(
-                'SELECT * FROM channel_guild where id_guild=$1',
-                guild.id
-            )
-            for db_channel_guild in db_channel_guild_list:
-                channel_state = dict(db_channel_guild)
-                channel_state['id_message'] = None
-                channel_state['entry_state_list'] = []
-                guild_state['channel_state_map'][channel_state['id_channel']] = channel_state
     finally:
         await bot.pool.release(conn)
     bot.stuff_loaded = True
@@ -92,6 +85,9 @@ async def on_guild_join(guild):
     guild_state = {
         'id_guild': guild.id,
         'talonro': True,
+        'id_mvp_channel': None,
+        'id_mining_channel': None,
+        'id_member_channel': None,
         'user_state_map': {},
         'channel_state_map': {}
     }
@@ -114,18 +110,9 @@ async def on_guild_remove(guild):
     try:
         await conn.execute('DELETE FROM mvp_guild WHERE id_guild=$1', guild.id)
         await conn.execute('DELETE FROM mining_guild WHERE id_guild=$1', guild.id)
-        await conn.execute('DELETE FROM channel_guild WHERE id_guild=$1', guild.id)
         await conn.execute('DELETE FROM guild WHERE id=$1', guild.id)
     finally:
         await bot.pool.release(conn)
-
-async def timer_thread(bot):
-    while True:
-        for extension in extensions:
-            cog = bot.get_cog(extension)
-            if cog is not None and hasattr(cog, 'timer'):
-                await cog.timer()
-        await asyncio.sleep(bot.config['table_refresh_rate_secs'])
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -136,6 +123,14 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         return
     raise error
+
+async def timer_thread(bot):
+    while True:
+        for extension in extensions:
+            cog = bot.get_cog(extension)
+            if cog is not None and hasattr(cog, 'timer'):
+                await cog.timer()
+        await asyncio.sleep(bot.config['table_refresh_rate_secs'])
 
 tasks = [
     asyncio.ensure_future(timer_thread(bot)),
