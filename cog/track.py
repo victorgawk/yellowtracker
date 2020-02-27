@@ -346,7 +346,7 @@ async def load_db_entries(bot, conn, type):
 
 async def init_channel(bot, channel_state):
     guild = next(x for x in bot.guilds if x.id == channel_state['id_guild'])
-    channel = next(x for x in guild.channels if x.id == channel_state['id_channel'])
+    channel = next((x for x in guild.channels if x.id == channel_state['id_channel']), None)
     if channel is None:
         return
     channel_state['id_message'] = None
@@ -461,14 +461,10 @@ async def update_channel_message(bot, channel_state):
             table.append(table_row)
         result = entry_desc(type) + 'S\n'
         result += terminaltables.AsciiTable(table).table
-    guild = next(x for x in bot.guilds if x.id == channel_state['id_guild'])
+    guild = next((x for x in bot.guilds if x.id == channel_state['id_guild']), None)
     if guild is None:
         return
-    channel = None
-    try:
-        channel = next(x for x in guild.channels if x.id == channel_state['id_channel'])
-    except:
-        pass
+    channel = next((x for x in guild.channels if x.id == channel_state['id_channel']), None)
     if channel is None:
         return
     message = None

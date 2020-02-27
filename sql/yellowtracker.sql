@@ -133,8 +133,11 @@ INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Incantation Samura
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Stormy Knight','xmas_dun02',60,70,45,75);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'SK');
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Tao Gunka','beach_dun',300,310,NULL,NULL);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Tao1');
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Tao Gunka','beach_dun2',300,310,NULL,NULL);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Tao2');
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Tao Gunka','beach_dun3',300,310,NULL,NULL);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Tao3');
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Tendrilion','spl_fild03',60,60,NULL,NULL);
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Thanatos','thana_boss',120,120,NULL,NULL);
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Turtle General','tur_dun04',60,70,45,75);
