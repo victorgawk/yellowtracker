@@ -91,8 +91,8 @@ class Track(Cog):
             entry = user_state['results'][index]
             bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'])
             try:
-                await user_state['bot_msg'].clear_reactions()
                 await user_state['bot_msg'].edit(content=fmt_msg(bot_reply_msg))
+                await user_state['bot_msg'].clear_reactions()
             except:
                 pass
             guild_state['user_state_map'][user.id] = None
@@ -110,8 +110,8 @@ class Track(Cog):
             entry = user_state['results'][index]
             bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'])
             try:
-                await user_state['bot_msg'].clear_reactions()
                 await user_state['bot_msg'].edit(content=fmt_msg(bot_reply_msg))
+                await user_state['bot_msg'].clear_reactions()
             except:
                 pass
             guild_state['user_state_map'][user.id] = None
@@ -255,7 +255,7 @@ class Track(Cog):
                     if datetime.utcnow() - msg_date > timedelta(seconds=self.bot.config['del_msg_after_secs']):
                         try:
                             await msg.delete()
-                        except discord.errors.NotFound:
+                        except:
                             pass
 
 async def set_channel(bot, ctx, channel, type):
@@ -478,7 +478,10 @@ async def update_channel_message(bot, channel_state):
         channel_state['id_message'] = message.id
     else:
         await message.edit(content=fmt_msg(result))
-        await message.clear_reactions()
+        try:
+            await message.clear_reactions()
+        except:
+            pass
 
 def find_entry(query, type):
     entry_list = mvp_list if type == TrackType.MVP else mining_list

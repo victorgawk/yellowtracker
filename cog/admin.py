@@ -65,7 +65,7 @@ async def send_member_message(bot, guild, user, title, description):
     id_channel = guild_state['id_member_channel']
     if id_channel is None:
         return
-    channel = next(x for x in guild.channels if x.id == id_channel)
+    channel = next((x for x in guild.channels if x.id == id_channel), None)
     if channel is None:
         return
     embed = discord.Embed()
