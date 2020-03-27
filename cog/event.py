@@ -186,7 +186,8 @@ def get_evts(bot, timezone, type=None):
         )
         while dt_evt_begin.isoweekday() != int(evt['weekday']):
             dt_evt_begin += timedelta(days=1)
-        dt_evt_begin = dt_evt_begin.astimezone(timezone)
+        dt_evt_begin = dt_evt_begin.replace(tzinfo=None)
+        dt_evt_begin = timezone.localize(dt_evt_begin, is_dst=False)
         evt_end = evt['end'].split(':')
         dt_evt_end = DateUtil.get_dt_now(bot.tz_str).replace(
             hour=int(evt_end[0]),
@@ -196,7 +197,8 @@ def get_evts(bot, timezone, type=None):
         )
         while dt_evt_end.isoweekday() != int(evt['weekday']):
             dt_evt_end += timedelta(days=1)
-        dt_evt_end = dt_evt_end.astimezone(timezone)
+        dt_evt_end = dt_evt_end.replace(tzinfo=None)
+        dt_evt_end = timezone.localize(dt_evt_end, is_dst=False)
         evt['dt_begin'] = dt_evt_begin
         evt['dt_end'] = dt_evt_end
         result.append(evt)
