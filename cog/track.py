@@ -254,6 +254,7 @@ class Track(Cog):
                     pass
                 if channel is None:
                     continue
+                try:
                 async for msg in channel.history(limit=100):
                     if msg.id == channel_state['id_message']:
                         continue
@@ -263,6 +264,8 @@ class Track(Cog):
                             await msg.delete()
                         except:
                             pass
+                except discord.errors.Forbidden:
+                    pass
 
 async def set_channel(bot, ctx, channel, type):
     if channel is None:
