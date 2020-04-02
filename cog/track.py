@@ -359,7 +359,13 @@ async def init_channel(bot, channel_state):
     if channel is None:
         return
     channel_state['id_message'] = None
-    msgs = await channel.history().flatten()
+    msgs = None
+    try:
+        msgs = await channel.history().flatten()
+    except discord.errors.Forbidden:
+        pass
+    if msgs is None:
+        return
     msgs_to_delete = []
     for msg in msgs:
         if msg.author == bot.user and channel_state['id_message'] is None:
