@@ -122,6 +122,8 @@ async def on_command_error(ctx, error):
         return
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         return
+    elif isinstance(error, commands.errors.BotMissingPermissions):
+        return
     raise error
 
 async def timer_thread(bot):
