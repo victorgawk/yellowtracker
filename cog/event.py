@@ -41,6 +41,7 @@ class Event(Cog):
         self.bot = bot
 
     @commands.command(help='Show TalonRO War of Emperium times')
+    @commands.bot_has_permissions(send_messages=True)
     async def woe(self, ctx):
         woe_map = get_woe_map(self.bot, timezone(self.bot.tz_str))
         embed = discord.Embed()
@@ -51,12 +52,13 @@ class Event(Cog):
         embed.add_field(name='Next :arrow_right:', value=woe_map['next'], inline=False)
         embed.add_field(name='Saturday', value=woe_map['saturday'], inline=False)
         embed.add_field(name='Sunday', value=woe_map['sunday'], inline=False)
-        footer = 'Server Time (' + self.bot.tz_str + '): ' 
+        footer = 'Server Time (' + self.bot.tz_str + '): '
         footer += DateUtil.fmt_dt(DateUtil.get_dt_now(self.bot.tz_str))
         embed.set_footer(text=footer)
         await ctx.send(embed=embed)
 
     @commands.command(help='Show TalonRO GM Challenge times')
+    @commands.bot_has_permissions(send_messages=True)
     async def gmc(self, ctx):
         gmc_map = get_gmc_map(self.bot, timezone(self.bot.tz_str))
         embed = discord.Embed()

@@ -119,6 +119,7 @@ class Track(Cog):
     @commands.command(help='Enable/disable custom TalonRO MVP respawn times')
     @commands.guild_only()
     @has_permissions(administrator=True)
+    @commands.bot_has_permissions(send_messages=True)
     async def talonro(self, ctx):
         guild_state = self.bot.guild_state_map[ctx.guild.id]
         talonro = not guild_state['talonro']
@@ -136,29 +137,34 @@ class Track(Cog):
     @commands.command(help='Set the MVP channel')
     @commands.guild_only()
     @has_permissions(administrator=True)
+    @commands.bot_has_permissions(send_messages=True)
     async def setmvpchannel(self, ctx, channel: discord.TextChannel = None):
         await set_channel(self.bot, ctx, channel, TrackType.MVP)
 
     @commands.command(help='Set the mining channel')
     @commands.guild_only()
     @has_permissions(administrator=True)
+    @commands.bot_has_permissions(send_messages=True)
     async def setminingchannel(self, ctx, channel: discord.TextChannel = None):
         await set_channel(self.bot, ctx, channel, TrackType.MINING)
 
     @commands.command(help='Unset the MVP channel')
     @commands.guild_only()
     @has_permissions(administrator=True)
+    @commands.bot_has_permissions(send_messages=True)
     async def unsetmvpchannel(self, ctx):
         await unset_channel(self.bot, ctx, TrackType.MVP)
 
     @commands.command(help='Unset the mining channel')
     @commands.guild_only()
     @has_permissions(administrator=True)
+    @commands.bot_has_permissions(send_messages=True)
     async def unsetminingchannel(self, ctx):
         await unset_channel(self.bot, ctx, TrackType.MINING)
 
     @commands.command(aliases=['t'], help='Track a MVP that has been defeated')
     @commands.guild_only()
+    @commands.bot_has_permissions(send_messages=True)
     async def track(self, ctx, *args):
         guild_state = self.bot.guild_state_map[ctx.guild.id]
         channel_state = guild_state['channel_state_map'].get(ctx.message.channel.id)
@@ -474,8 +480,11 @@ async def update_channel_message(bot, channel_state):
         except:
             pass
     if message is None:
-        message = await channel.send(content=fmt_msg(result))
-        channel_state['id_message'] = message.id
+        try:
+            message = await channel.send(content=fmt_msg(result))
+            channel_state['id_message'] = message.id
+        except discord.errors.Forbidden:
+            pass
     else:
         await message.edit(content=fmt_msg(result))
         try:

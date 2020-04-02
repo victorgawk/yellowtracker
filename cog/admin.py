@@ -33,6 +33,7 @@ class Admin(Cog):
     @commands.command(help='Set the member channel')
     @commands.guild_only()
     @has_permissions(administrator=True)
+    @commands.bot_has_permissions(send_messages=True)
     async def setmemberchannel(self, ctx, channel: discord.TextChannel = None):
         if channel is None:
             channel = ctx.message.channel
@@ -49,6 +50,7 @@ class Admin(Cog):
     @commands.command(help='Unset the member channel')
     @commands.guild_only()
     @has_permissions(administrator=True)
+    @commands.bot_has_permissions(send_messages=True)
     async def unsetmemberchannel(self, ctx):
         guild_state = self.bot.guild_state_map[ctx.guild.id]
         guild_state['id_member_channel'] = None
