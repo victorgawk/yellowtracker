@@ -255,15 +255,15 @@ class Track(Cog):
                 if channel is None:
                     continue
                 try:
-                async for msg in channel.history(limit=100):
-                    if msg.id == channel_state['id_message']:
-                        continue
-                    msg_date = msg.created_at if msg.edited_at is None else msg.edited_at
-                    if datetime.utcnow() - msg_date > timedelta(seconds=self.bot.config['del_msg_after_secs']):
-                        try:
-                            await msg.delete()
-                        except:
-                            pass
+                    async for msg in channel.history(limit=100):
+                        if msg.id == channel_state['id_message']:
+                            continue
+                        msg_date = msg.created_at if msg.edited_at is None else msg.edited_at
+                        if datetime.utcnow() - msg_date > timedelta(seconds=self.bot.config['del_msg_after_secs']):
+                            try:
+                                await msg.delete()
+                            except:
+                                pass
                 except discord.errors.Forbidden:
                     pass
 
