@@ -368,7 +368,7 @@ async def init_channel(bot, channel_state):
         return
     msgs_to_delete = []
     for msg in msgs:
-        if msg.author == bot.user and channel_state['id_message'] is None:
+        if msg.type == discord.MessageType.default and msg.author == bot.user and channel_state['id_message'] is None:
             channel_state['id_message'] = msg.id
             await update_channel_message(bot, channel_state)
             continue
