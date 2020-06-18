@@ -7,8 +7,6 @@ import terminaltables
 from cog.cog import Cog
 from util.date import DateUtil
 
-mvp_list = []
-mining_list = []
 emojis = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣']
 
 class TrackType:
@@ -44,21 +42,23 @@ class Track(Cog):
                     channel_state['id_message'] = None
                     channel_state['entry_state_list'] = []
                     guild_state['channel_state_map'][guild_state['id_mining_channel']] = channel_state
+            self.bot.mvp_list = []
             db_mvp_list = await conn.fetch('SELECT * FROM mvp')
             for db_mvp in db_mvp_list:
                 mvp_dict = dict(db_mvp)
                 mvp_dict['alias'] = []
-                mvp_list.append(mvp_dict)
+                self.bot.mvp_list.append(mvp_dict)
             db_mvp_alias_list = await conn.fetch('SELECT * FROM mvp_alias')
             for db_mvp_alias in db_mvp_alias_list:
-                mvp = next(x for x in mvp_list if x['id'] == db_mvp_alias['id_mvp'])
+                mvp = next(x for x in self.bot.mvp_list if x['id'] == db_mvp_alias['id_mvp'])
                 mvp['alias'].append(db_mvp_alias['alias'])
+            self.bot.mining_list = []
             db_mining_list = await conn.fetch('SELECT * FROM mining')
             for db_mining in db_mining_list:
                 mining_dict = dict(db_mining)
                 mining_dict['t1'] = 30
                 mining_dict['alias'] = []
-                mining_list.append(mining_dict)
+                self.bot.mining_list.append(mining_dict)
             await load_db_entries(self.bot, conn, TrackType.MVP)
             await load_db_entries(self.bot, conn, TrackType.MINING)
             for id_guild in self.bot.guild_state_map:
@@ -197,7 +197,7 @@ class Track(Cog):
         for i in range(1, query_last_idx + 1):
             query += ' ' + args[i]
         type = channel_state['type']
-        results = find_entry(query, type)
+        results = find_entry(self.bot, query, type)
         if len(results) == 0:
             await ctx.send(fmt_msg(entry_desc(type) + ' "' + query + '" not found.'))
         elif len(results) == 1:
@@ -330,7 +330,7 @@ async def unset_channel(bot, ctx, type):
 
 async def load_db_entries(bot, conn, type):
     db_entry_guild_list = await conn.fetch('SELECT * FROM ' + entry_desc_sql(type) + '_guild')
-    entry_list = mvp_list if type == TrackType.MVP else mining_list
+    entry_list = bot.mvp_list if type == TrackType.MVP else bot.mining_list
     for db_entry_guild in db_entry_guild_list:
         mins_ago = (datetime.now() - db_entry_guild['track_time']).total_seconds() / 60
         guild_state = bot.guild_state_map[db_entry_guild['id_guild']]
@@ -501,8 +501,8 @@ async def update_channel_message(bot, channel_state):
         except:
             pass
 
-def find_entry(query, type):
-    entry_list = mvp_list if type == TrackType.MVP else mining_list
+def find_entry(bot, query, type):
+    entry_list = bot.mvp_list if type == TrackType.MVP else bot.mining_list
     results = []
     for entry in entry_list:
         compare = entry['name']

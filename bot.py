@@ -22,6 +22,8 @@ class Bot(commands.Bot):
         self.guild_state_map = {}
         self.stuff_loaded = False
         self.tz_str = 'Europe/Berlin'
+        self.mvp_list = []
+        self.mining_list = []
 
 bot = Bot(command_prefix='!')
 
