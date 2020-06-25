@@ -6,7 +6,6 @@ from discord.ext.commands import has_permissions
 import asyncpg
 import asyncio
 import math
-import os
 from base.bot import Bot
 
 bot = Bot(command_prefix='!')
