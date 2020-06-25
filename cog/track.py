@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions
 from datetime import datetime, timedelta
 import terminaltables
-from cog.cog import Cog
+from base.cog import Cog
 from util.date import DateUtil
 
 emojis = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣']
@@ -361,7 +361,7 @@ async def init_channel(bot, channel_state):
     channel_state['id_message'] = None
     msgs = None
     try:
-        msgs = await channel.history().flatten()
+        msgs = await channel.history(oldest_first=True).flatten()
     except discord.errors.Forbidden:
         pass
     if msgs is None:

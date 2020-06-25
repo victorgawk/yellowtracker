@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions
-from cog.cog import Cog
+from base.cog import Cog
 
 class Admin(Cog):
     def __init__(self, bot):

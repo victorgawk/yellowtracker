@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import discord
 from discord.ext import commands
 import math
-from cog.cog import Cog
+from base.cog import Cog
 from util.date import DateUtil
 
 weekly_events = [
