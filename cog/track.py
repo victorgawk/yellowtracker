@@ -484,10 +484,17 @@ async def update_channel_message(bot, channel_state):
         return
     message = None
     if channel_state['id_message'] is not None:
-        try:
-            message = await channel.fetch_message(channel_state['id_message'])
-        except:
-            pass
+        fetch_msg_retries = 0
+        while fetch_msg_retries < 10:
+            try:
+                message = await channel.fetch_message(channel_state['id_message'])
+                break
+            except:
+                fetch_msg_retries += 1
+                print('retrying to fetch message - retry number ' + str(fetch_msg_retries))
+                await asyncio.sleep(fetch_msg_retries)
+        if fetch_msg_retries == 10:
+            print('retries failed - sending a new message')
     if message is None:
         try:
             message = await channel.send(content=fmt_msg(result))
