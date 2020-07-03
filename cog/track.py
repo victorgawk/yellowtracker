@@ -243,9 +243,7 @@ class Track(Cog):
                 if channel_state is None:
                     continue
                 for entry_state in channel_state['entry_state_list']:
-                    entry_state['r1'] -= self.bot.config['table_refresh_rate_secs'] / 60
-                    if channel_state['type'] == TrackType.MVP:
-                        entry_state['r2'] -= self.bot.config['table_refresh_rate_secs'] / 60
+                    calc_remaining_time(entry_state, entry_state['track_time'], channel_state['type'])
                 await update_channel_message(self.bot, channel_state)
                 channel = None
                 try:
@@ -332,7 +330,6 @@ async def load_db_entries(bot, conn, type):
     db_entry_guild_list = await conn.fetch('SELECT * FROM ' + entry_desc_sql(type) + '_guild')
     entry_list = bot.mvp_list if type == TrackType.MVP else bot.mining_list
     for db_entry_guild in db_entry_guild_list:
-        mins_ago = (datetime.now() - db_entry_guild['track_time']).total_seconds() / 60
         guild_state = bot.guild_state_map[db_entry_guild['id_guild']]
         if guild_state is None:
             continue
@@ -351,7 +348,7 @@ async def load_db_entries(bot, conn, type):
         )
         if channel_state is None:
             continue
-        await track_entry(bot, channel_state, entry, mins_ago)
+        await track_entry(bot, channel_state, entry, db_entry_guild['track_time'])
 
 async def init_channel(bot, channel_state):
     guild = next(x for x in bot.guilds if x.id == channel_state['id_guild'])
@@ -381,6 +378,7 @@ async def init_channel(bot, channel_state):
 async def update_track_time(bot, channel_state, entry, mins_ago):
     conn = await bot.pool.acquire()
     type = channel_state['type']
+    track_time = datetime.now() - timedelta(minutes=mins_ago)
     try:
         read_sql = 'SELECT * FROM ' + entry_desc_sql(type) + '_guild '
         read_sql += 'WHERE id_' + entry_desc_sql(type) + '=$1 AND id_guild=$2'
@@ -394,11 +392,10 @@ async def update_track_time(bot, channel_state, entry, mins_ago):
         if len(entry_guild_db) > 0:
             write_sql = 'UPDATE ' + entry_desc_sql(type) + '_guild SET track_time=$3 '
             write_sql += 'WHERE id_' + entry_desc_sql(type) + '=$1 AND id_guild=$2'
-        track_time = datetime.now() - timedelta(minutes=mins_ago)
         await conn.execute(write_sql, entry['id'], channel_state['id_guild'], track_time)
     finally:
         await bot.pool.release(conn)
-    entry_state = await track_entry(bot, channel_state, entry, mins_ago)
+    entry_state = await track_entry(bot, channel_state, entry, track_time)
     await update_channel_message(bot, channel_state)
     msg = entry_state['entry']['name']
     if type == TrackType.MVP:
@@ -413,7 +410,7 @@ async def update_track_time(bot, channel_state, entry, mins_ago):
     msg += ' minutes.'
     return msg
 
-async def track_entry(bot, channel_state, entry, mins_ago):
+async def track_entry(bot, channel_state, entry, track_time):
     type = channel_state['type']
     entry_state = next((x for x in channel_state['entry_state_list'] if x['entry'] == entry), None)   
     if entry_state is None:
@@ -423,17 +420,22 @@ async def track_entry(bot, channel_state, entry, mins_ago):
         if type == TrackType.MVP:
             entry_state['r2'] = -999
         channel_state['entry_state_list'].append(entry_state)
-    t1 = entry['t1']
+    entry_state['t1'] = entry['t1']
     if type == TrackType.MVP:
-        t2 = entry['t2']
+        entry_state['t2'] = entry['t2']
         if bot.guild_state_map[channel_state['id_guild']]['talonro'] and entry['t1talonro'] is not None:
-            t1 = entry['t1talonro']
-            t2 = entry['t2talonro']
-    entry_state['r1'] = t1 - mins_ago
-    if type == TrackType.MVP:
-        entry_state['r2'] = t2 - mins_ago
+            entry_state['t1'] = entry['t1talonro']
+            entry_state['t2'] = entry['t2talonro']
+    entry_state['track_time'] = track_time
+    calc_remaining_time(entry_state, track_time, type)
     channel_state['entry_state_list'].sort(key=lambda e : e['r1'])
     return entry_state
+
+def calc_remaining_time(entry_state, track_time, type):
+    mins_ago = round((datetime.now() - track_time).total_seconds() / 60)
+    entry_state['r1'] = entry_state['t1'] - mins_ago
+    if type == TrackType.MVP:
+        entry_state['r2'] = entry_state['t2'] - mins_ago
 
 async def update_channel_message(bot, channel_state):
     type = channel_state['type']
@@ -450,6 +452,13 @@ async def update_channel_message(bot, channel_state):
             entry_state['r1'] = -999
             if type == TrackType.MVP:
                 entry_state['r2'] = -999
+            conn = await bot.pool.acquire()
+            try:
+                sql  = 'DELETE FROM ' + entry_desc_sql(type) + '_guild '
+                sql += 'WHERE id_guild=$1 AND id_' + entry_desc_sql(type) + '=$2'
+                await conn.execute(sql, channel_state['id_guild'], entry_state['entry']['id'])
+            finally:
+                await bot.pool.release(conn)
         if entry_state[cmp] > -bot.config['table_entry_expiration_mins']:
             remaining_time = str(int(entry_state['r1']))
             if type == TrackType.MVP:
