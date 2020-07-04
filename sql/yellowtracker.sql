@@ -1,4 +1,6 @@
 /*
+DROP TABLE IF EXISTS mining_guild_log;
+DROP TABLE IF EXISTS mvp_guild_log;
 DROP TABLE IF EXISTS mining_guild;
 DROP TABLE IF EXISTS mining;
 DROP TABLE IF EXISTS mvp_guild;
@@ -58,6 +60,22 @@ CREATE TABLE mining_guild (
     id_guild bigint NOT NULL,
     track_time timestamp without time zone NOT NULL,
     CONSTRAINT mining_guild_pk PRIMARY KEY (id_mining, id_guild)
+);
+
+CREATE TABLE mvp_guild_log (
+    id_mvp integer NOT NULL,
+    id_guild bigint NOT NULL,
+    log_date timestamp without time zone NOT NULL,
+    log_user text NOT NULL,
+    CONSTRAINT mvp_guild_log_pk PRIMARY KEY (id_mvp, id_guild, log_date, log_user)
+);
+
+CREATE TABLE mining_guild_log (
+    id_mining integer NOT NULL,
+    id_guild bigint NOT NULL,
+    log_date timestamp without time zone NOT NULL,
+    log_user text NOT NULL,
+    CONSTRAINT mining_guild_log_pk PRIMARY KEY (id_mining, id_guild, log_date, log_user)
 );
 
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Amon Ra','moc_pryd06',60,70,45,75);

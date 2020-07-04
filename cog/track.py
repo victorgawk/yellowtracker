@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import terminaltables
 from base.cog import Cog
 from util.date import DateUtil
+from collections import deque
 
 emojis = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣']
 
@@ -33,6 +34,7 @@ class Track(Cog):
                     channel_state['type'] = TrackType.MVP
                     channel_state['id_message'] = None
                     channel_state['entry_state_list'] = []
+                    channel_state['entry_log_list'] = deque()
                     guild_state['channel_state_map'][guild_state['id_mvp_channel']] = channel_state
                 if guild_state['id_mining_channel'] is not None:
                     channel_state = {}
@@ -41,6 +43,7 @@ class Track(Cog):
                     channel_state['type'] = TrackType.MINING
                     channel_state['id_message'] = None
                     channel_state['entry_state_list'] = []
+                    channel_state['entry_log_list'] = deque()
                     guild_state['channel_state_map'][guild_state['id_mining_channel']] = channel_state
             self.bot.mvp_list = []
             db_mvp_list = await conn.fetch('SELECT * FROM mvp')
@@ -89,7 +92,7 @@ class Track(Cog):
             if index < 0 or index >= len(user_state['results']):
                 return
             entry = user_state['results'][index]
-            bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'])
+            bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'], user)
             try:
                 await user_state['bot_msg'].edit(content=fmt_msg(bot_reply_msg))
                 await user_state['bot_msg'].clear_reactions()
@@ -108,7 +111,7 @@ class Track(Cog):
         if user_state is not None and channel_state is not None:
             index = emojis.index(reaction.emoji)
             entry = user_state['results'][index]
-            bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'])
+            bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'], user)
             try:
                 await user_state['bot_msg'].edit(content=fmt_msg(bot_reply_msg))
                 await user_state['bot_msg'].clear_reactions()
@@ -175,7 +178,6 @@ class Track(Cog):
         if len(args) == 0:
             return
         query_last_idx = len(args) - 1
-        #FIXME: nao esta funcionando com numero decimal (ex "10.5" "10,6")
         if args[query_last_idx].isnumeric():
             mins_ago = int(args[query_last_idx])
             query_last_idx -= 1
@@ -201,7 +203,7 @@ class Track(Cog):
         if len(results) == 0:
             await ctx.send(fmt_msg(entry_desc(type) + ' "' + query + '" not found.'))
         elif len(results) == 1:
-            bot_reply_msg = await update_track_time(self.bot, channel_state, results[0], mins_ago)
+            bot_reply_msg = await update_track_time(self.bot, channel_state, results[0], mins_ago, ctx.message.author)
             await ctx.send(fmt_msg(bot_reply_msg))
         else:
             bot_reply_msg = 'More than one ' + entry_desc(type)
@@ -287,7 +289,8 @@ async def set_channel(bot, ctx, channel, type):
         'id_guild': ctx.guild.id,
         'type': type,
         'id_message': None,
-        'entry_state_list': entry_state_list
+        'entry_state_list': entry_state_list,
+        'entry_log_list': deque()
     }
     channel_state_map[channel.id] = channel_state
     await init_channel(bot, channel_state)
@@ -349,6 +352,50 @@ async def load_db_entries(bot, conn, type):
         if channel_state is None:
             continue
         await track_entry(bot, channel_state, entry, db_entry_guild['track_time'])
+    await load_db_entries_log(bot, conn, type)
+
+async def load_db_entries_log(bot, conn, type):
+    sql = 'SELECT * FROM ' + entry_desc_sql(type) + '_guild_log ORDER BY log_date DESC'
+    db_entry_log_list = await conn.fetch(sql)
+    entry_list = bot.mvp_list if type == TrackType.MVP else bot.mining_list
+    for db_entry_log in db_entry_log_list:
+        guild_state = bot.guild_state_map[db_entry_log['id_guild']]
+        if guild_state is None:
+            continue
+        entry = next(
+            x for x in entry_list
+            if x['id'] == db_entry_log['id_' + entry_desc_sql(type)]
+        )
+        channel_state_map = guild_state['channel_state_map']
+        channel_state = next(
+            (
+                channel_state_map[x]
+                for x in channel_state_map
+                if channel_state_map[x]['type'] == type
+            ),
+            None
+        )
+        if channel_state is None:
+            continue
+        if len(channel_state['entry_log_list']) < 3:
+            channel_state['entry_log_list'].append({
+                'entry': entry,
+                'log_date': db_entry_log['log_date'],
+                'log_user': db_entry_log['log_user']
+            })
+            continue
+        delete_sql = 'DELETE FROM ' + entry_desc_sql(type) + '_guild_log'
+        delete_sql += ' WHERE id_guild=$1'
+        delete_sql += ' AND id_' + entry_desc_sql(type) + '=$2'
+        delete_sql += ' AND log_date=$3'
+        delete_sql += ' AND log_user=$4'
+        await conn.execute(
+            delete_sql,
+            db_entry_log['id_guild'],
+            db_entry_log['id_' + entry_desc_sql(type)],
+            db_entry_log['log_date'],
+            db_entry_log['log_user']
+        )
 
 async def init_channel(bot, channel_state):
     guild = next(x for x in bot.guilds if x.id == channel_state['id_guild'])
@@ -375,7 +422,7 @@ async def init_channel(bot, channel_state):
     except:
         pass
 
-async def update_track_time(bot, channel_state, entry, mins_ago):
+async def update_track_time(bot, channel_state, entry, mins_ago, log_user):
     conn = await bot.pool.acquire()
     type = channel_state['type']
     track_time = datetime.now() - timedelta(minutes=mins_ago)
@@ -387,12 +434,24 @@ async def update_track_time(bot, channel_state, entry, mins_ago):
             entry['id'],
             channel_state['id_guild']
         )
-        write_sql = 'INSERT INTO ' + entry_desc_sql(type) + '_guild(id_' + entry_desc_sql(type) 
+        write_sql = 'INSERT INTO ' + entry_desc_sql(type) + '_guild(id_' + entry_desc_sql(type)
         write_sql += ',id_guild,track_time)VALUES($1,$2,$3)'
         if len(entry_guild_db) > 0:
             write_sql = 'UPDATE ' + entry_desc_sql(type) + '_guild SET track_time=$3 '
             write_sql += 'WHERE id_' + entry_desc_sql(type) + '=$1 AND id_guild=$2'
         await conn.execute(write_sql, entry['id'], channel_state['id_guild'], track_time)
+        log_sql = 'INSERT INTO ' + entry_desc_sql(type) + '_guild_log(id_' + entry_desc_sql(type)
+        log_sql += ',id_guild,log_date,log_user)VALUES($1,$2,$3,$4)'
+        log_date = datetime.now()
+        log_user_str = str(log_user)
+        await conn.execute(log_sql, entry['id'], channel_state['id_guild'], log_date, log_user_str)
+        channel_state['entry_log_list'].appendleft({
+            'entry': entry,
+            'log_date': log_date,
+            'log_user': log_user_str
+        })
+        if len(channel_state['entry_log_list']) > 3:
+            channel_state['entry_log_list'].pop()
     finally:
         await bot.pool.release(conn)
     entry_state = await track_entry(bot, channel_state, entry, track_time)
@@ -472,7 +531,7 @@ async def update_channel_message(bot, channel_state):
             table.append(table_row)
     result = 'No ' + entry_desc(type) + ' has been tracked.'
     if len(table) > 1:
-        max_length = 29
+        max_length = 20
         if len(table) > max_length + 1:
             diff = len(table) - max_length
             for i in range(0, diff):
@@ -485,6 +544,16 @@ async def update_channel_message(bot, channel_state):
             table.append(table_row)
         result = entry_desc(type) + 'S\n'
         result += terminaltables.AsciiTable(table).table
+    if len(channel_state['entry_log_list']) > 0:
+        result += '\n\nTRACK LOG:\n'
+        for entry_log in channel_state['entry_log_list']:
+            milliseconds = (entry_log['log_date'] - datetime.now()) / timedelta(milliseconds=1)
+            result += '[' + DateUtil.fmt_time_short(milliseconds) + ']'
+            result += ' ' + entry_log['entry']['name']
+            if type == TrackType.MVP:
+                result += ' (' + entry_log['entry']['map'] + ')'
+            result += ' by ' + entry_log['log_user']
+            result += '\n'
     guild = next((x for x in bot.guilds if x.id == channel_state['id_guild']), None)
     if guild is None:
         return
