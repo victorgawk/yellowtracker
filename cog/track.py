@@ -66,7 +66,7 @@ class Track(Cog):
             await load_db_entries(self.bot, conn, TrackType.MINING)
             for id_guild in self.bot.guild_state_map:
                 guild_state = self.bot.guild_state_map[id_guild]
-                guild = next(x for x in self.bot.guilds if x.id == id_guild)
+                guild = next((x for x in self.bot.guilds if x.id == id_guild), None)
                 if guild is None:
                     continue
                 for id_channel in guild_state['channel_state_map']:
@@ -247,11 +247,7 @@ class Track(Cog):
                 for entry_state in channel_state['entry_state_list']:
                     calc_remaining_time(entry_state, entry_state['track_time'], channel_state['type'])
                 await update_channel_message(self.bot, channel_state)
-                channel = None
-                try:
-                    channel = next(x for x in guild.channels if x.id == channel_state['id_channel'])
-                except StopIteration:
-                    pass
+                channel = next((x for x in guild.channels if x.id == channel_state['id_channel']), None)
                 if channel is None:
                     continue
                 try:
