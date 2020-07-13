@@ -145,7 +145,7 @@ INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Pharaoh','in_sphinx5'
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Phreeoni','moc_fild17',120,130,105,135);
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Queen Scaraba','dic_dun02',120,121,NULL,NULL);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'QS');
-INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('RSX-0806','ein_dun02',125,135,NULL,NULL);
+INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('RSX-0806','ein_dun02',125,135,110,140);
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Samurai Specter','ama_dun03',91,101,NULL,NULL);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Incantation Samurai');
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Stormy Knight','xmas_dun02',60,70,45,75);

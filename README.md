@@ -81,7 +81,7 @@ Osiris | - | moc_pryd04 | 60~180 mins |  |
 Pharaoh | - | in_sphinx5 | 60~70 mins | 45~75 mins |    
 Phreeoni | - | moc_fild17 | 120~130 mins | 105~135 mins |    
 Queen Scaraba | QS | dic_dun02 | 120~121 mins |  |    
-RSX-0806 | - | ein_dun02 | 125~135 mins |  |    
+RSX-0806 | - | ein_dun02 | 125~135 mins | 110~140 mins |
 Samurai Specter | Incantation Samurai | ama_dun03 | 91~101 mins |  |    
 Stormy Knight | SK | xmas_dun02 | 60~70 mins | 45~75 mins |    
 Tao Gunka | Tao1 | beach_dun | 300~310 mins |  |    
