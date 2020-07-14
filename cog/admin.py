@@ -62,6 +62,16 @@ class Admin(Cog):
             await self.bot.pool.release(conn)
         await ctx.send('Member channel unset.')
 
+    @commands.command(help='Lists all guilds that the bot is a member of')
+    @commands.dm_only()
+    @commands.is_owner()
+    @commands.bot_has_permissions(send_messages=True)
+    async def guilds(self, ctx):
+        str = 'Connected to {0} guild(s):\n'.format(len(self.bot.guilds))
+        for guild in self.bot.guilds:
+            str += '{0.name} ({0.id})\n'.format(guild)
+        await ctx.send(str)
+
 async def send_member_message(bot, guild, user, title, description):
     guild_state = bot.guild_state_map[guild.id]
     id_channel = guild_state['id_member_channel']

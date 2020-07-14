@@ -21,10 +21,7 @@ for extension in extensions:
 @bot.event
 async def on_ready():
     bot.stuff_loaded = False
-    print('Logged in as {0.user}!'.format(bot))
-    print('Connected to {0} guild(s).'.format(len(bot.guilds)))
     for guild in bot.guilds:
-        print(guild.name)
         guild_state = {
             'id_guild': guild.id,
             'talonro': True,
@@ -117,6 +114,10 @@ async def on_command_error(ctx, error):
         return
     elif isinstance(error, commands.errors.CommandInvokeError):
         return
+    elif isinstance(error, commands.errors.PrivateMessageOnly):
+        return
+    elif isinstance(error, commands.errors.NotOwner):
+        return
     raise error
 
 async def timer_thread(bot):
@@ -126,6 +127,9 @@ async def timer_thread(bot):
             if cog is not None and hasattr(cog, 'timer'):
                 await cog.timer()
         await asyncio.sleep(bot.config['table_refresh_rate_secs'])
+
+
+print('Bot started!'.format(bot))
 
 tasks = [
     asyncio.ensure_future(timer_thread(bot)),
