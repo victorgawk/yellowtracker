@@ -102,23 +102,7 @@ async def on_guild_remove(guild):
 
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.errors.CommandNotFound):
-        return
-    elif isinstance(error, commands.errors.MissingPermissions):
-        return
-    elif isinstance(error, commands.errors.MissingRequiredArgument):
-        return
-    elif isinstance(error, commands.errors.BotMissingPermissions):
-        return
-    elif isinstance(error, commands.errors.NoPrivateMessage):
-        return
-    elif isinstance(error, commands.errors.CommandInvokeError):
-        return
-    elif isinstance(error, commands.errors.PrivateMessageOnly):
-        return
-    elif isinstance(error, commands.errors.NotOwner):
-        return
-    raise error
+    return
 
 async def timer_thread(bot):
     while True:

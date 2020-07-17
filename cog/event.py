@@ -5,6 +5,7 @@ from discord.ext import commands
 import math
 from base.cog import Cog
 from util.date import DateUtil
+from util.coroutine import CoroutineUtil
 
 weekly_events = [
 {'name':'Vanilla NT','type':'woe','weekday':'6','begin':'15:00','end':'16:00'},
@@ -55,7 +56,7 @@ class Event(Cog):
         footer = 'Server Time (' + self.bot.tz_str + '): '
         footer += DateUtil.fmt_dt(DateUtil.get_dt_now(self.bot.tz_str))
         embed.set_footer(text=footer)
-        await ctx.send(embed=embed)
+        await CoroutineUtil.run(ctx.send(embed=embed))
 
     @commands.command(help='Show TalonRO GM Challenge times')
     @commands.bot_has_permissions(send_messages=True)
@@ -74,7 +75,7 @@ class Event(Cog):
         footer = 'Server Time (' + self.bot.tz_str + '): ' 
         footer += DateUtil.fmt_dt(DateUtil.get_dt_now(self.bot.tz_str))
         embed.set_footer(text=footer)
-        await ctx.send(embed=embed)
+        await CoroutineUtil.run(ctx.send(embed=embed))
 
     async def timer(self):
         if self.bot.ws is not None:
@@ -89,7 +90,7 @@ class Event(Cog):
                 str += DateUtil.fmt_time_short((evt['dt_begin'] - dt_now) / timedelta(milliseconds=1))
             str += ' (TalonRO)'
             game = discord.Game(name=str)
-            await self.bot.change_presence(activity=game)
+            await CoroutineUtil.run(self.bot.change_presence(activity=game))
 
 def get_gmc_map(bot, timezone):
     dt_now = DateUtil.get_dt_now(bot.tz_str)

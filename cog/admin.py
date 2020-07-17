@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from base.cog import Cog
+from util.coroutine import CoroutineUtil
 
 class Admin(Cog):
     def __init__(self, bot):
@@ -45,7 +46,7 @@ class Admin(Cog):
             await conn.execute(sql, channel.id, ctx.guild.id)
         finally:
             await self.bot.pool.release(conn)
-        await ctx.send('Member channel set to {0.mention}.'.format(channel))
+        await CoroutineUtil.run(ctx.send('Member channel set to {0.mention}.'.format(channel)))
 
     @commands.command(help='Unset the member channel')
     @commands.guild_only()
@@ -60,7 +61,7 @@ class Admin(Cog):
             await conn.execute(sql, ctx.guild.id)
         finally:
             await self.bot.pool.release(conn)
-        await ctx.send('Member channel unset.')
+        await CoroutineUtil.run(ctx.send('Member channel unset.'))
 
     @commands.command(help='Lists all guilds that the bot is a member of')
     @commands.dm_only()
@@ -70,7 +71,7 @@ class Admin(Cog):
         str = 'Connected to {0} guild(s):\n'.format(len(self.bot.guilds))
         for guild in self.bot.guilds:
             str += '{0.name} ({0.id})\n'.format(guild)
-        await ctx.send(str)
+        await CoroutineUtil.run(ctx.send(str))
 
 async def send_member_message(bot, guild, user, title, description):
     guild_state = bot.guild_state_map[guild.id]
@@ -87,7 +88,7 @@ async def send_member_message(bot, guild, user, title, description):
     embed.set_author(icon_url=user.avatar_url, name='{0}'.format(user))
     embed.colour = discord.Colour.gold()
     embed.set_footer(text='User ID: {0.id}'.format(user))
-    await channel.send(embed=embed)
+    await CoroutineUtil.run(channel.send(embed=embed))
 
 def setup(bot):
     bot.add_cog(Admin(bot))

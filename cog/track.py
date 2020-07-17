@@ -7,6 +7,7 @@ import terminaltables
 from base.cog import Cog
 from util.date import DateUtil
 from collections import deque
+from util.coroutine import CoroutineUtil
 
 emojis = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣']
 
@@ -84,21 +85,16 @@ class Track(Cog):
         channel_state = guild_state['channel_state_map'].get(channel.id)
         user_state = guild_state['user_state_map'].get(user.id)
         if user_state is not None and channel_state is not None:
-            index = -1
-            try:
-                index = int(message.content) - 1
-            except:
-                pass
+            if not message.content.isnumeric():
+                return
+            index = int(message.content) - 1
             if index < 0 or index >= len(user_state['results']):
                 return
+            guild_state['user_state_map'][user.id] = None
             entry = user_state['results'][index]
             bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'], user)
-            try:
-                await user_state['bot_msg'].edit(content=fmt_msg(bot_reply_msg))
-                await user_state['bot_msg'].clear_reactions()
-            except:
-                pass
-            guild_state['user_state_map'][user.id] = None
+            await CoroutineUtil.run(user_state['bot_msg'].edit(content=fmt_msg(bot_reply_msg)))
+            await CoroutineUtil.run(user_state['bot_msg'].clear_reactions())
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -109,15 +105,16 @@ class Track(Cog):
         channel_state = guild_state['channel_state_map'].get(channel.id)
         user_state = guild_state['user_state_map'].get(user.id)
         if user_state is not None and channel_state is not None:
-            index = emojis.index(reaction.emoji)
+            index = -1
+            try:
+                index = emojis.index(reaction.emoji)
+            except ValueError:
+                return
+            guild_state['user_state_map'][user.id] = None
             entry = user_state['results'][index]
             bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'], user)
-            try:
-                await user_state['bot_msg'].edit(content=fmt_msg(bot_reply_msg))
-                await user_state['bot_msg'].clear_reactions()
-            except:
-                pass
-            guild_state['user_state_map'][user.id] = None
+            await CoroutineUtil.run(user_state['bot_msg'].edit(content=fmt_msg(bot_reply_msg)))
+            await CoroutineUtil.run(user_state['bot_msg'].clear_reactions())
 
     @commands.command(help='Enable/disable custom TalonRO MVP respawn times')
     @commands.guild_only()
@@ -135,7 +132,7 @@ class Track(Cog):
             await self.bot.pool.release(conn)
         msg = 'TalonRO custom MVP respawn times '
         msg += 'enabled.' if talonro else 'disabled.'
-        await ctx.send(fmt_msg(msg))
+        await CoroutineUtil.run(ctx.send(fmt_msg(msg)))
 
     @commands.command(help='Set the MVP channel')
     @commands.guild_only()
@@ -169,10 +166,14 @@ class Track(Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(send_messages=True)
     async def track(self, ctx, *args):
+        validate_msg = validate_channel(self.bot, ctx.message.channel)
+        if validate_msg is not None:
+            await CoroutineUtil.run(ctx.send(fmt_msg(validate_msg)))
+            return
         guild_state = self.bot.guild_state_map[ctx.guild.id]
         channel_state = guild_state['channel_state_map'].get(ctx.message.channel.id)
         if channel_state is None:
-            await ctx.send(fmt_msg('This command can only be used in a track channel.'))
+            await CoroutineUtil.run(ctx.send(fmt_msg('This command can only be used in a track channel.')))
             return
         mins_ago = 0
         if len(args) == 0:
@@ -201,10 +202,10 @@ class Track(Cog):
         type = channel_state['type']
         results = find_entry(self.bot, query, type)
         if len(results) == 0:
-            await ctx.send(fmt_msg(entry_desc(type) + ' "' + query + '" not found.'))
+            await CoroutineUtil.run(ctx.send(fmt_msg(entry_desc(type) + ' "' + query + '" not found.')))
         elif len(results) == 1:
             bot_reply_msg = await update_track_time(self.bot, channel_state, results[0], mins_ago, ctx.message.author)
-            await ctx.send(fmt_msg(bot_reply_msg))
+            await CoroutineUtil.run(ctx.send(fmt_msg(bot_reply_msg)))
         else:
             bot_reply_msg = 'More than one ' + entry_desc(type)
             bot_reply_msg += ' starting with "' + query + '" has been found.\n'
@@ -217,23 +218,17 @@ class Track(Cog):
                 if type == TrackType.MVP:
                     bot_reply_msg += ' (' + results[i]['map'] + ')'
                 bot_reply_msg += '\n'
-            bot_msg = await ctx.send(fmt_msg(bot_reply_msg))
+            bot_msg = await CoroutineUtil.run(ctx.send(fmt_msg(bot_reply_msg)))
             user_entry_state = guild_state['user_state_map'].get(ctx.message.author.id)
             if user_entry_state is not None and user_entry_state['bot_msg'] is not None:
-                try:
-                    await user_entry_state['bot_msg'].delete()
-                except discord.errors.NotFound:
-                    pass
+                await CoroutineUtil.run(user_entry_state['bot_msg'].delete())
             guild_state['user_state_map'][ctx.message.author.id] = {
                 'bot_msg': bot_msg,
                 'results': results,
                 'mins_ago': mins_ago
             }
-            try:
-                for i in range(0, min(len(results),5)):
-                    await bot_msg.add_reaction(emojis[i])
-            except discord.errors.NotFound:
-                pass
+            for i in range(0, min(len(results),5)):
+                await CoroutineUtil.run(bot_msg.add_reaction(emojis[i]))
 
     async def timer(self):
         for guild in self.bot.guilds:
@@ -248,24 +243,25 @@ class Track(Cog):
                     calc_remaining_time(entry_state, entry_state['track_time'], channel_state['type'])
                 await update_channel_message(self.bot, channel_state)
                 channel = next((x for x in guild.channels if x.id == channel_state['id_channel']), None)
-                if channel is None:
+                if validate_channel(self.bot, channel) is not None:
+                    return
+                msgs = await CoroutineUtil.run(channel.history(limit=100).flatten())
+                if msgs is None:
                     continue
-                try:
-                    async for msg in channel.history(limit=100):
-                        if msg.id == channel_state['id_message']:
-                            continue
-                        msg_date = msg.created_at if msg.edited_at is None else msg.edited_at
-                        if datetime.utcnow() - msg_date > timedelta(seconds=self.bot.config['del_msg_after_secs']):
-                            try:
-                                await msg.delete()
-                            except:
-                                pass
-                except discord.errors.Forbidden:
-                    pass
+                for msg in msgs:
+                    if msg.id == channel_state['id_message']:
+                        continue
+                    msg_date = msg.created_at if msg.edited_at is None else msg.edited_at
+                    if datetime.utcnow() - msg_date > timedelta(seconds=self.bot.config['del_msg_after_secs']):
+                        await CoroutineUtil.run(msg.delete())
 
 async def set_channel(bot, ctx, channel, type):
     if channel is None:
         channel = ctx.message.channel
+    validate_msg = validate_channel(bot, channel)
+    if validate_msg is not None:
+        await CoroutineUtil.run(ctx.send(fmt_msg(validate_msg)))
+        return
     guild_state = bot.guild_state_map[ctx.guild.id]
     channel_state_map = guild_state['channel_state_map']
     channel_state = next(
@@ -298,9 +294,13 @@ async def set_channel(bot, ctx, channel, type):
         await conn.execute(sql, channel.id, ctx.guild.id)
     finally:
         await bot.pool.release(conn)
-    await ctx.send(fmt_msg('New ' + entry_desc(type) + ' channel set to "' + channel.name + '".'))
+    await CoroutineUtil.run(ctx.send(fmt_msg('New ' + entry_desc(type) + ' channel set to "' + channel.name + '".')))
 
 async def unset_channel(bot, ctx, type):
+    validate_msg = validate_channel(bot, ctx.message.channel)
+    if validate_msg is not None:
+        await CoroutineUtil.run(ctx.send(fmt_msg(validate_msg)))
+        return
     guild_state = bot.guild_state_map[ctx.guild.id]
     channel_state_map = guild_state['channel_state_map']
     channel_state = next(
@@ -312,7 +312,7 @@ async def unset_channel(bot, ctx, type):
         None
     )
     if channel_state is None:
-        await ctx.send(fmt_msg('There is no ' + entry_desc(type) + ' channel set.'))
+        await CoroutineUtil.run(ctx.send(fmt_msg('There is no ' + entry_desc(type) + ' channel set.')))
         return
     del channel_state_map[channel_state['id_channel']]
     conn = await bot.pool.acquire()
@@ -323,7 +323,7 @@ async def unset_channel(bot, ctx, type):
         await conn.execute(sql, ctx.guild.id)
     finally:
         await bot.pool.release(conn)
-    await ctx.send(fmt_msg(entry_desc(type) + ' channel unset.'))
+    await CoroutineUtil.run(ctx.send(fmt_msg(entry_desc(type) + ' channel unset.')))
 
 async def load_db_entries(bot, conn, type):
     db_entry_guild_list = await conn.fetch('SELECT * FROM ' + entry_desc_sql(type) + '_guild')
@@ -396,14 +396,10 @@ async def load_db_entries_log(bot, conn, type):
 async def init_channel(bot, channel_state):
     guild = next(x for x in bot.guilds if x.id == channel_state['id_guild'])
     channel = next((x for x in guild.channels if x.id == channel_state['id_channel']), None)
-    if channel is None:
+    if validate_channel(bot, channel) is not None:
         return
     channel_state['id_message'] = None
-    msgs = None
-    try:
-        msgs = await channel.history(oldest_first=True).flatten()
-    except discord.errors.Forbidden:
-        pass
+    msgs = await CoroutineUtil.run(channel.history(oldest_first=True).flatten())
     if msgs is None:
         return
     msgs_to_delete = []
@@ -413,10 +409,7 @@ async def init_channel(bot, channel_state):
             await update_channel_message(bot, channel_state)
             continue
         msgs_to_delete.append(msg)
-    try:
-        await channel.delete_messages(msgs_to_delete)
-    except:
-        pass
+    await CoroutineUtil.run(channel.delete_messages(msgs_to_delete))
 
 async def update_track_time(bot, channel_state, entry, mins_ago, log_user):
     conn = await bot.pool.acquire()
@@ -554,33 +547,43 @@ async def update_channel_message(bot, channel_state):
     if guild is None:
         return
     channel = next((x for x in guild.channels if x.id == channel_state['id_channel']), None)
-    if channel is None:
+    if validate_channel(bot, channel) is not None:
         return
     message = None
     if channel_state['id_message'] is not None:
-        fetch_msg_retries = 0
-        while fetch_msg_retries < 10:
-            try:
-                message = await channel.fetch_message(channel_state['id_message'])
-                break
-            except:
-                fetch_msg_retries += 1
-                print('retrying to fetch message - retry number ' + str(fetch_msg_retries))
-                await asyncio.sleep(fetch_msg_retries)
-        if fetch_msg_retries == 10:
-            print('retries failed - sending a new message')
+        message = await CoroutineUtil.run_with_retries(channel.fetch_message(channel_state['id_message']))
     if message is None:
-        try:
-            message = await channel.send(content=fmt_msg(result))
+        message = await CoroutineUtil.run(channel.send(content=fmt_msg(result)))
+        if message is not None:
             channel_state['id_message'] = message.id
-        except discord.errors.Forbidden:
-            pass
     else:
-        await message.edit(content=fmt_msg(result))
-        try:
-            await message.clear_reactions()
-        except:
-            pass
+        await CoroutineUtil.run(message.edit(content=fmt_msg(result)))
+        await CoroutineUtil.run(message.clear_reactions())
+
+def validate_channel(bot, channel):
+    if channel is None:
+        return 'Invalid channel.'
+    member = next((x for x in channel.members if x == bot.user), None)
+    if member is None:
+        return 'Bot need to be a member of this channel.'
+    permissions = channel.permissions_for(member)
+    missing_permissions = []
+    if not permissions.read_messages:
+        missing_permissions.append('Read Messages')
+    if not permissions.send_messages:
+        missing_permissions.append('Send Messages')
+    if not permissions.manage_messages:
+        missing_permissions.append('Manage Messages')
+    if not permissions.read_message_history:
+        missing_permissions.append('Read Message History')
+    if not permissions.add_reactions:
+        missing_permissions.append('Add Reactions')
+    if len(missing_permissions) > 0:
+        msg = 'Bot is missing the following permissions:\n\n'
+        for idx in range(len(missing_permissions)):
+            msg += str(idx+1) + '. ' + missing_permissions[idx] + '\n'
+        return msg
+    return None
 
 def find_entry(bot, query, type):
     entry_list = bot.mvp_list if type == TrackType.MVP else bot.mining_list
