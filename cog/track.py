@@ -244,7 +244,7 @@ class Track(Cog):
                 await update_channel_message(self.bot, channel_state)
                 channel = next((x for x in guild.channels if x.id == channel_state['id_channel']), None)
                 if validate_channel(self.bot, channel) is not None:
-                    return
+                    continue
                 msgs = await CoroutineUtil.run(channel.history(limit=100).flatten())
                 if msgs is None:
                     continue
