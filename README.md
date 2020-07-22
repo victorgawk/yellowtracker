@@ -11,7 +11,7 @@ Instructions:
 
 3. Use the **!track** command to track a MVP that has been defeated. OBS.: can only be used inside the MVP tracking channel.
 
-4. In  addition to MVPs, the bot also can be used to track mining zones, where each zone represents one or more mining maps with characteristics in common (for instance, the mining zone "Ice Dungeon" corresponds to the maps "ice_dun01", "ice_dun02" and "ice_dun03"). As well as MVPs, you need to define a channel to be used exclusively to track mining zones. To do this use the **!setminingchannel** command. This channel will keep the list of tracked mining zones.
+OBS: In  addition to MVPs, the bot also can be used to track mining zones, where each zone represents one or more mining maps with characteristics in common (for instance, the mining zone "Ice Dungeon" corresponds to the maps "ice_dun01", "ice_dun02" and "ice_dun03"). As well as MVPs, you need to define a channel to be used exclusively to track mining zones. To do this use the **!setminingchannel** command. This channel will keep the list of tracked mining zones.
 
 Bot commands:
 
