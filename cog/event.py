@@ -41,6 +41,18 @@ class Event(Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.wait_load_stuff()
+        conn = await self.bot.pool.acquire()
+        try:
+            global_parameter = await conn.fetchrow('SELECT * FROM global_parameter WHERE id=$1', 1)
+            race_time = global_parameter['race_time']
+            if race_time is not None:
+                self.bot.race_time = race_time.astimezone(timezone(self.bot.tz_str))
+        finally:
+            await self.bot.pool.release(conn)
+
     @commands.command(help='Show TalonRO War of Emperium times')
     @commands.bot_has_permissions(send_messages=True)
     async def woe(self, ctx):
@@ -77,9 +89,41 @@ class Event(Cog):
         embed.set_footer(text=footer)
         await CoroutineUtil.run(ctx.send(embed=embed))
 
+    @commands.command(help='Set the next Summer Race time')
+    @commands.bot_has_permissions(send_messages=True)
+    async def setrace(self, ctx, time_str):
+        mins_ago = 0
+        if len(time_str) != 5 or time_str[2] != ':':
+            return
+        hrs_mins = time_str.split(':')
+        if len(hrs_mins) != 2 or not hrs_mins[0].isnumeric() or not hrs_mins[1].isnumeric():
+            return
+        hh = int(hrs_mins[0])
+        mm = int(hrs_mins[1])
+        time = datetime.now() + timedelta(hours=hh, minutes=mm)
+        await update_race_time(self.bot, time)
+        await CoroutineUtil.run(ctx.send('Summer Race set to begin in {0} hours and {1} minutes.'.format(hh, mm)))
+
     async def timer(self):
         if self.bot.ws is not None:
             dt_now = DateUtil.get_dt_now(self.bot.tz_str)
+            if self.bot.race_time is not None:
+                race_begin = self.bot.race_time
+                race_end = self.bot.race_time + timedelta(hours=1)
+                if dt_now > race_end:
+                    await update_race_time(self.bot, None)
+                else:
+                    str = 'Summer Race'
+                    if race_begin <= dt_now <= race_end:
+                        str += ' ends '
+                        str += DateUtil.fmt_time_short((race_end - dt_now) / timedelta(milliseconds=1))
+                    else:
+                        str += ' '
+                        str += DateUtil.fmt_time_short((race_begin - dt_now) / timedelta(milliseconds=1))
+                    str += ' (TalonRO)'
+                    game = discord.Game(name=str)
+                    await CoroutineUtil.run(self.bot.change_presence(activity=game))
+                    return
             evt = get_next_evt(self.bot, timezone(self.bot.tz_str))
             str = ('WoE ' if evt['type'] == 'woe' else '') + evt['name']
             if evt['dt_begin'] <= dt_now <= evt['dt_end']:
@@ -91,6 +135,17 @@ class Event(Cog):
             str += ' (TalonRO)'
             game = discord.Game(name=str)
             await CoroutineUtil.run(self.bot.change_presence(activity=game))
+
+async def update_race_time(bot, race_time):
+    conn = await bot.pool.acquire()
+    try:
+        sql = 'UPDATE global_parameter SET race_time=$1 WHERE id=$2'
+        await conn.execute(sql, race_time, 1)
+    finally:
+        await bot.pool.release(conn)
+    bot.race_time = None
+    if race_time is not None:
+        bot.race_time = race_time.astimezone(timezone(bot.tz_str))
 
 def get_gmc_map(bot, timezone):
     dt_now = DateUtil.get_dt_now(bot.tz_str)

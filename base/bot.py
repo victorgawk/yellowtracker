@@ -18,3 +18,4 @@ class Bot(commands.Bot):
         self.tz_str = 'Europe/Berlin'
         self.mvp_list = []
         self.mining_list = []
+        self.race_time = None

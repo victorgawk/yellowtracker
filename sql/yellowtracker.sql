@@ -8,12 +8,19 @@ DROP TABLE IF EXISTS mvp_alias;
 DROP TABLE IF EXISTS mvp;
 DROP TABLE IF EXISTS channel_guild;
 DROP TABLE IF EXISTS guild;
+DROP TABLE IF EXISTS global_parameter;
 DROP SEQUENCE IF EXISTS mvp_seq;
 DROP SEQUENCE IF EXISTS mining_seq;
 */
 
 CREATE SEQUENCE mvp_seq;
 CREATE SEQUENCE mining_seq;
+
+CREATE TABLE global_parameter (
+    id bigint NOT NULL,
+    race_time timestamp without time zone,
+    CONSTRAINT global_parameter_pk PRIMARY KEY (id)
+);
 
 CREATE TABLE guild (
     id bigint NOT NULL,
@@ -77,6 +84,8 @@ CREATE TABLE mining_guild_log (
     log_user text NOT NULL,
     CONSTRAINT mining_guild_log_pk PRIMARY KEY (id_mining, id_guild, log_date, log_user)
 );
+
+INSERT INTO global_parameter(id)VALUES(1);
 
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Amon Ra','moc_pryd06',60,70,45,75);
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Atroce','ra_fild02',240,250,NULL,NULL);
