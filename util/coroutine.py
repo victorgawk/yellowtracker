@@ -18,7 +18,4 @@ class CoroutineUtil(object):
                 break
             except:
                 curr += 1
-                print('retrying to execute coroutine - retry number ' + str(curr))
                 await asyncio.sleep(curr)
-        if curr == max:
-            print('retries failed')

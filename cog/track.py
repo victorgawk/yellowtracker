@@ -81,7 +81,9 @@ class Track(Cog):
         channel = message.channel
         if not isinstance(channel, discord.TextChannel):
             return
-        guild_state = self.bot.guild_state_map[channel.guild.id]
+        guild_state = self.bot.guild_state_map.get(channel.guild.id)
+        if guild_state is None:
+            return
         channel_state = guild_state['channel_state_map'].get(channel.id)
         user_state = guild_state['user_state_map'].get(user.id)
         if user_state is not None and channel_state is not None:
@@ -101,7 +103,9 @@ class Track(Cog):
         if user == self.bot.user:
             return
         channel = reaction.message.channel
-        guild_state = self.bot.guild_state_map[channel.guild.id]
+        guild_state = self.bot.guild_state_map.get(channel.guild.id)
+        if guild_state is None:
+            return
         channel_state = guild_state['channel_state_map'].get(channel.id)
         user_state = guild_state['user_state_map'].get(user.id)
         if user_state is not None and channel_state is not None:
