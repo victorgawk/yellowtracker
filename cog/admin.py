@@ -69,9 +69,16 @@ class Admin(Cog):
     @commands.bot_has_permissions(send_messages=True)
     async def guilds(self, ctx):
         str = 'Connected to {0} guild(s):\n'.format(len(self.bot.guilds))
+        count = 0
         for guild in self.bot.guilds:
             str += '{0.name} ({0.id})\n'.format(guild)
-        await CoroutineUtil.run(ctx.send(str))
+            count += 1
+            if count == 20:
+                await CoroutineUtil.run(ctx.send(str))
+                str = ''
+                count = 0
+        if count > 0:
+            await CoroutineUtil.run(ctx.send(str))
 
 async def send_member_message(bot, guild, user, title, description):
     guild_state = bot.guild_state_map[guild.id]
