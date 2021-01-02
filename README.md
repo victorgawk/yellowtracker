@@ -58,7 +58,7 @@ Gloom Under Night | - | ra_san05 | 300~310 mins |  |
 Golden Thief Bug | GTB | prt_sewb4 | 60~70 mins | 45~75 mins |    
 Gold Queen Scaraba | GQS | dic_dun03 | 120~120 mins |  |    
 Gopinich | - | mosk_dun03 | 120~130 mins | 105~135 mins |    
-Hardrock Mammoth | Mammoth | man_fild03 | 240~241 mins |  |    
+Hardrock Mammoth | Mammoth | man_fild03 | 240~241 mins | 210~270 mins |    
 Ifrit | - | thor_v03 | 660~670 mins |  |    
 Kiel D-01 | - | kh_dun02 | 120~180 mins |  |    
 Kraken | - | iz_dun05 | 120~130 mins | 105~135 mins |    

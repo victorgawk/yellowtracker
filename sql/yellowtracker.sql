@@ -120,7 +120,7 @@ INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'GQS');
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Golden Thief Bug','prt_sewb4',60,70,45,75);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'GTB');
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Gopinich','mosk_dun03',120,130,105,135);
-INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Hardrock Mammoth','man_fild03',240,241,NULL,NULL);
+INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Hardrock Mammoth','man_fild03',240,241,210,270);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Mammoth');
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Ifrit','thor_v03',660,670,NULL,NULL);
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Kiel D-01','kh_dun02',120,180,NULL,NULL);
