@@ -625,7 +625,7 @@ def entry_desc(type, sql=False):
     return 'MVP' if type == TrackType.MVP else 'MINING ZONE'
 
 def fmt_msg(msg):
-    return '```css\n' + msg + '```'
+    return '```ml\n' + msg + '```'
 
 def setup(bot):
     bot.add_cog(Track(bot))
