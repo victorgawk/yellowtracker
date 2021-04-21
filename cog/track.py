@@ -3,13 +3,14 @@ import asyncio
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from datetime import datetime, timedelta
-import terminaltables
 from base.cog import Cog
 from util.date import DateUtil
 from collections import deque
 from util.coroutine import CoroutineUtil
 
-emojis = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣']
+number_emoji_list = ['1⃣', '2⃣', '3⃣', '4⃣', '5⃣']
+yes_emoji = '✅'
+no_emoji = '❌'
 
 class TrackType:
     MVP = 1
@@ -94,8 +95,8 @@ class Track(Cog):
                 return
             guild_state['user_state_map'][user.id] = None
             entry = user_state['results'][index]
-            bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'], user)
-            await CoroutineUtil.run(user_state['bot_msg'].edit(content=fmt_msg(bot_reply_msg)))
+            bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'], user.id)
+            await CoroutineUtil.run(user_state['bot_msg'].edit(content=bot_reply_msg))
             await CoroutineUtil.run(user_state['bot_msg'].clear_reactions())
 
     @commands.Cog.listener()
@@ -108,17 +109,66 @@ class Track(Cog):
             return
         channel_state = guild_state['channel_state_map'].get(channel.id)
         user_state = guild_state['user_state_map'].get(user.id)
-        if user_state is not None and channel_state is not None:
-            index = -1
-            try:
-                index = emojis.index(reaction.emoji)
-            except ValueError:
-                return
-            guild_state['user_state_map'][user.id] = None
-            entry = user_state['results'][index]
-            bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'], user)
-            await CoroutineUtil.run(user_state['bot_msg'].edit(content=fmt_msg(bot_reply_msg)))
-            await CoroutineUtil.run(user_state['bot_msg'].clear_reactions())
+        if user_state is not None:
+            if user_state['command'] == 'TRACK':
+                if channel_state is None:
+                    return
+                index = -1
+                try:
+                    index = number_emoji_list.index(reaction.emoji)
+                except ValueError:
+                    return
+                guild_state['user_state_map'][user.id] = None
+                entry = user_state['results'][index]
+                bot_reply_msg = await update_track_time(self.bot, channel_state, entry, user_state['mins_ago'], user.id)
+                await CoroutineUtil.run(user_state['bot_msg'].edit(content=bot_reply_msg))
+                await CoroutineUtil.run(user_state['bot_msg'].clear_reactions())
+            elif user_state['command'] == 'CLEAN':
+                if channel_state is None:
+                    return
+                if reaction.emoji != yes_emoji and reaction.emoji != no_emoji:
+                    return
+                guild_state['user_state_map'][user.id] = None
+                if reaction.emoji == no_emoji:
+                    bot_reply_msg = 'Clean cancelled.'
+                    await CoroutineUtil.run(user_state['bot_msg'].edit(content=bot_reply_msg))
+                    await CoroutineUtil.run(user_state['bot_msg'].clear_reactions())
+                    return
+                conn = await self.bot.pool.acquire()
+                try:
+                    type = channel_state['type']
+                    for entry_state in channel_state['entry_state_list']:
+                        mins_ago = entry_state['t2' if type == TrackType.MVP else 't1']
+                        mins_ago += self.bot.config['table_entry_expiration_mins']
+                        entry_state['r1'] = -mins_ago
+                        if type == TrackType.MVP:
+                            entry_state['r2'] = -mins_ago
+                        track_time = datetime.now() - timedelta(minutes=mins_ago)
+                        sql  = 'UPDATE ' + entry_desc_sql(type) + '_guild '
+                        sql += 'SET track_time=$3 '
+                        sql += 'WHERE id_guild=$1 AND id_' + entry_desc_sql(type) + '=$2'
+                        await conn.execute(sql, channel_state['id_guild'], entry_state['entry']['id'], track_time)
+                finally:
+                    await self.bot.pool.release(conn)
+                channel_state['entry_state_list'].clear()
+                await update_channel_message(self.bot, channel_state)
+                bot_reply_msg = 'List cleared.'
+                await CoroutineUtil.run(user_state['bot_msg'].edit(content=bot_reply_msg))
+                await CoroutineUtil.run(user_state['bot_msg'].clear_reactions())
+            elif user_state['command'] == 'SETMVPCHANNEL' or user_state['command'] == 'SETMININGCHANNEL':
+                if reaction.emoji != yes_emoji and reaction.emoji != no_emoji:
+                    return
+                type = TrackType.MVP
+                if user_state['command'] == 'SETMININGCHANNEL':
+                    type = TrackType.MINING
+                guild_state['user_state_map'][user.id] = None
+                if reaction.emoji == no_emoji:
+                    bot_reply_msg = 'Set ' + entry_desc(type) + ' channel cancelled.'
+                    await CoroutineUtil.run(user_state['bot_msg'].edit(content=bot_reply_msg))
+                    await CoroutineUtil.run(user_state['bot_msg'].clear_reactions())
+                    return
+                await CoroutineUtil.run(user_state['bot_msg'].clear_reactions())
+                await set_channel(self.bot, user_state['bot_msg'].channel, type)
 
     @commands.command(help='Enable/disable custom TalonRO MVP respawn times')
     @commands.guild_only()
@@ -136,21 +186,21 @@ class Track(Cog):
             await self.bot.pool.release(conn)
         msg = 'TalonRO custom MVP respawn times '
         msg += 'enabled.' if talonro else 'disabled.'
-        await CoroutineUtil.run(ctx.send(fmt_msg(msg)))
+        await CoroutineUtil.run(ctx.send(msg))
 
     @commands.command(help='Set the MVP channel')
     @commands.guild_only()
     @has_permissions(administrator=True)
     @commands.bot_has_permissions(send_messages=True)
-    async def setmvpchannel(self, ctx, channel: discord.TextChannel = None):
-        await set_channel(self.bot, ctx, channel, TrackType.MVP)
+    async def setmvpchannel(self, ctx):
+        await confirm_set_channel(self.bot, ctx, TrackType.MVP)
 
     @commands.command(help='Set the mining channel')
     @commands.guild_only()
     @has_permissions(administrator=True)
     @commands.bot_has_permissions(send_messages=True)
-    async def setminingchannel(self, ctx, channel: discord.TextChannel = None):
-        await set_channel(self.bot, ctx, channel, TrackType.MINING)
+    async def setminingchannel(self, ctx):
+        await confirm_set_channel(self.bot, ctx, TrackType.MINING)
 
     @commands.command(help='Unset the MVP channel')
     @commands.guild_only()
@@ -166,18 +216,45 @@ class Track(Cog):
     async def unsetminingchannel(self, ctx):
         await unset_channel(self.bot, ctx, TrackType.MINING)
 
+    @commands.command(help='Remove all tracked MVPs from the list')
+    @commands.guild_only()
+    @has_permissions(administrator=True)
+    @commands.bot_has_permissions(send_messages=True)
+    async def clean(self, ctx, *args):
+        validate_msg = validate_channel(self.bot, ctx.message.channel)
+        if validate_msg is not None:
+            await CoroutineUtil.run(ctx.send(validate_msg))
+            return
+        guild_state = self.bot.guild_state_map[ctx.guild.id]
+        channel_state = guild_state['channel_state_map'].get(ctx.message.channel.id)
+        if channel_state is None:
+            await CoroutineUtil.run(ctx.send('This command can only be used in a track channel.'))
+            return
+        msg = 'This will clean the list. Are you sure?'
+        msg += '\nReact with ' + yes_emoji + ' for YES and ' + no_emoji + ' for NO.'
+        bot_msg = await CoroutineUtil.run(ctx.send(msg))
+        user_entry_state = guild_state['user_state_map'].get(ctx.message.author.id)
+        if user_entry_state is not None and user_entry_state['bot_msg'] is not None:
+            await CoroutineUtil.run(user_entry_state['bot_msg'].delete())
+        guild_state['user_state_map'][ctx.message.author.id] = {
+            'command': 'CLEAN',
+            'bot_msg': bot_msg
+        }
+        await CoroutineUtil.run(bot_msg.add_reaction(yes_emoji))
+        await CoroutineUtil.run(bot_msg.add_reaction(no_emoji))
+
     @commands.command(aliases=['t'], help='Track a MVP that has been defeated')
     @commands.guild_only()
     @commands.bot_has_permissions(send_messages=True)
     async def track(self, ctx, *args):
         validate_msg = validate_channel(self.bot, ctx.message.channel)
         if validate_msg is not None:
-            await CoroutineUtil.run(ctx.send(fmt_msg(validate_msg)))
+            await CoroutineUtil.run(ctx.send(validate_msg))
             return
         guild_state = self.bot.guild_state_map[ctx.guild.id]
         channel_state = guild_state['channel_state_map'].get(ctx.message.channel.id)
         if channel_state is None:
-            await CoroutineUtil.run(ctx.send(fmt_msg('This command can only be used in a track channel.')))
+            await CoroutineUtil.run(ctx.send('This command can only be used in a track channel.'))
             return
         mins_ago = 0
         if len(args) == 0:
@@ -206,33 +283,35 @@ class Track(Cog):
         type = channel_state['type']
         results = find_entry(self.bot, query, type)
         if len(results) == 0:
-            await CoroutineUtil.run(ctx.send(fmt_msg(entry_desc(type) + ' "' + query + '" not found.')))
+            await CoroutineUtil.run(ctx.send(entry_desc(type) + ' "' + query + '" not found.'))
         elif len(results) == 1:
-            bot_reply_msg = await update_track_time(self.bot, channel_state, results[0], mins_ago, ctx.message.author)
-            await CoroutineUtil.run(ctx.send(fmt_msg(bot_reply_msg)))
+            bot_reply_msg = await update_track_time(self.bot, channel_state, results[0], mins_ago, ctx.message.author.id)
+            await CoroutineUtil.run(ctx.send(bot_reply_msg))
         else:
             bot_reply_msg = 'More than one ' + entry_desc(type)
             bot_reply_msg += ' starting with "' + query + '" has been found.\n'
             bot_reply_msg += '\n'
             bot_reply_msg += 'Type or react with the number of the ' + entry_desc(type)
             bot_reply_msg += ' that you want to track:\n'
-            bot_reply_msg += '\n'
+            bot_reply_msg += '```'
             for i in range(0, min(len(results),5)):
                 bot_reply_msg += str(i + 1) + '. ' + results[i]['name'] 
                 if type == TrackType.MVP:
                     bot_reply_msg += ' (' + results[i]['map'] + ')'
                 bot_reply_msg += '\n'
-            bot_msg = await CoroutineUtil.run(ctx.send(fmt_msg(bot_reply_msg)))
+            bot_reply_msg += '```'
+            bot_msg = await CoroutineUtil.run(ctx.send(bot_reply_msg))
             user_entry_state = guild_state['user_state_map'].get(ctx.message.author.id)
             if user_entry_state is not None and user_entry_state['bot_msg'] is not None:
                 await CoroutineUtil.run(user_entry_state['bot_msg'].delete())
             guild_state['user_state_map'][ctx.message.author.id] = {
+                'command': 'TRACK',
                 'bot_msg': bot_msg,
                 'results': results,
                 'mins_ago': mins_ago
             }
             for i in range(0, min(len(results),5)):
-                await CoroutineUtil.run(bot_msg.add_reaction(emojis[i]))
+                await CoroutineUtil.run(bot_msg.add_reaction(number_emoji_list[i]))
 
     async def timer(self):
         for guild in self.bot.guilds:
@@ -259,14 +338,28 @@ class Track(Cog):
                     if datetime.utcnow() - msg_date > timedelta(seconds=self.bot.config['del_msg_after_secs']):
                         await CoroutineUtil.run(msg.delete())
 
-async def set_channel(bot, ctx, channel, type):
-    if channel is None:
-        channel = ctx.message.channel
+async def confirm_set_channel(bot, ctx, type):
+    channel = ctx.message.channel
     validate_msg = validate_channel(bot, channel)
     if validate_msg is not None:
-        await CoroutineUtil.run(ctx.send(fmt_msg(validate_msg)))
+        await CoroutineUtil.run(ctx.send(validate_msg))
         return
     guild_state = bot.guild_state_map[ctx.guild.id]
+    msg = 'This will remove all messages in this channel. Are you sure?'
+    msg += '\nReact with ' + yes_emoji + ' for YES and ' + no_emoji + ' for NO.'
+    bot_msg = await CoroutineUtil.run(ctx.send(msg))
+    user_entry_state = guild_state['user_state_map'].get(ctx.message.author.id)
+    if user_entry_state is not None and user_entry_state['bot_msg'] is not None:
+        await CoroutineUtil.run(user_entry_state['bot_msg'].delete())
+    guild_state['user_state_map'][ctx.message.author.id] = {
+        'command': 'SET' + entry_desc_sql(type).upper() + 'CHANNEL',
+        'bot_msg': bot_msg
+    }
+    await CoroutineUtil.run(bot_msg.add_reaction(yes_emoji))
+    await CoroutineUtil.run(bot_msg.add_reaction(no_emoji))
+
+async def set_channel(bot, channel, type):
+    guild_state = bot.guild_state_map[channel.guild.id]
     channel_state_map = guild_state['channel_state_map']
     channel_state = next(
         (
@@ -282,7 +375,7 @@ async def set_channel(bot, ctx, channel, type):
         del channel_state_map[channel_state['id_channel']]
     channel_state = {
         'id_channel': channel.id,
-        'id_guild': ctx.guild.id,
+        'id_guild': channel.guild.id,
         'type': type,
         'id_message': None,
         'entry_state_list': entry_state_list,
@@ -295,15 +388,14 @@ async def set_channel(bot, ctx, channel, type):
         sql  = 'UPDATE guild '
         sql += 'SET id_' + entry_desc_sql(type) + '_channel=$1 '
         sql += 'WHERE id=$2'
-        await conn.execute(sql, channel.id, ctx.guild.id)
+        await conn.execute(sql, channel.id, channel.guild.id)
     finally:
         await bot.pool.release(conn)
-    await CoroutineUtil.run(ctx.send(fmt_msg('New ' + entry_desc(type) + ' channel set to "' + channel.name + '".')))
 
 async def unset_channel(bot, ctx, type):
     validate_msg = validate_channel(bot, ctx.message.channel)
     if validate_msg is not None:
-        await CoroutineUtil.run(ctx.send(fmt_msg(validate_msg)))
+        await CoroutineUtil.run(ctx.send(validate_msg))
         return
     guild_state = bot.guild_state_map[ctx.guild.id]
     channel_state_map = guild_state['channel_state_map']
@@ -316,7 +408,7 @@ async def unset_channel(bot, ctx, type):
         None
     )
     if channel_state is None:
-        await CoroutineUtil.run(ctx.send(fmt_msg('There is no ' + entry_desc(type) + ' channel set.')))
+        await CoroutineUtil.run(ctx.send('There is no ' + entry_desc(type) + ' channel set.'))
         return
     del channel_state_map[channel_state['id_channel']]
     conn = await bot.pool.acquire()
@@ -327,7 +419,7 @@ async def unset_channel(bot, ctx, type):
         await conn.execute(sql, ctx.guild.id)
     finally:
         await bot.pool.release(conn)
-    await CoroutineUtil.run(ctx.send(fmt_msg(entry_desc(type) + ' channel unset.')))
+    await CoroutineUtil.run(ctx.send(entry_desc(type) + ' channel unset.'))
 
 async def load_db_entries(bot, conn, type):
     db_entry_guild_list = await conn.fetch('SELECT * FROM ' + entry_desc_sql(type) + '_guild')
@@ -355,7 +447,7 @@ async def load_db_entries(bot, conn, type):
     await load_db_entries_log(bot, conn, type)
 
 async def load_db_entries_log(bot, conn, type):
-    sql = 'SELECT * FROM ' + entry_desc_sql(type) + '_guild_log ORDER BY log_date DESC'
+    sql = 'SELECT * FROM ' + entry_desc_sql(type) + '_guild ORDER BY entry_time DESC'
     db_entry_log_list = await conn.fetch(sql)
     entry_list = bot.mvp_list if type == TrackType.MVP else bot.mining_list
     for db_entry_log in db_entry_log_list:
@@ -380,22 +472,22 @@ async def load_db_entries_log(bot, conn, type):
         if len(channel_state['entry_log_list']) < 3:
             channel_state['entry_log_list'].append({
                 'entry': entry,
-                'log_date': db_entry_log['log_date'],
-                'log_user': db_entry_log['log_user']
+                'entry_time': db_entry_log['entry_time'],
+                'id_user': db_entry_log['id_user']
             })
-            continue
-        delete_sql = 'DELETE FROM ' + entry_desc_sql(type) + '_guild_log'
-        delete_sql += ' WHERE id_guild=$1'
-        delete_sql += ' AND id_' + entry_desc_sql(type) + '=$2'
-        delete_sql += ' AND log_date=$3'
-        delete_sql += ' AND log_user=$4'
-        await conn.execute(
-            delete_sql,
-            db_entry_log['id_guild'],
-            db_entry_log['id_' + entry_desc_sql(type)],
-            db_entry_log['log_date'],
-            db_entry_log['log_user']
-        )
+        else:
+            entry_state = next((x for x in channel_state['entry_state_list'] if x['entry'] == entry), None)
+            if entry_state is not None:
+                rtime = entry_state['r2'] if type == TrackType.MVP else entry_state['r1']
+                if rtime <= -bot.config['table_entry_expiration_mins']:
+                    delete_sql = 'DELETE FROM ' + entry_desc_sql(type) + '_guild'
+                    delete_sql += ' WHERE id_guild=$1'
+                    delete_sql += ' AND id_' + entry_desc_sql(type) + '=$2'
+                    await conn.execute(
+                        delete_sql,
+                        db_entry_log['id_guild'],
+                        db_entry_log['id_' + entry_desc_sql(type)]
+                    )
 
 async def init_channel(bot, channel_state):
     guild = next(x for x in bot.guilds if x.id == channel_state['id_guild'])
@@ -415,10 +507,11 @@ async def init_channel(bot, channel_state):
         msgs_to_delete.append(msg)
     await CoroutineUtil.run(channel.delete_messages(msgs_to_delete))
 
-async def update_track_time(bot, channel_state, entry, mins_ago, log_user):
+async def update_track_time(bot, channel_state, entry, mins_ago, id_user):
     conn = await bot.pool.acquire()
     type = channel_state['type']
-    track_time = datetime.now() - timedelta(minutes=mins_ago)
+    entry_time = datetime.now()
+    track_time = entry_time - timedelta(minutes=mins_ago)
     try:
         read_sql = 'SELECT * FROM ' + entry_desc_sql(type) + '_guild '
         read_sql += 'WHERE id_' + entry_desc_sql(type) + '=$1 AND id_guild=$2'
@@ -428,20 +521,22 @@ async def update_track_time(bot, channel_state, entry, mins_ago, log_user):
             channel_state['id_guild']
         )
         write_sql = 'INSERT INTO ' + entry_desc_sql(type) + '_guild(id_' + entry_desc_sql(type)
-        write_sql += ',id_guild,track_time)VALUES($1,$2,$3)'
+        write_sql += ',id_guild,track_time,entry_time,id_user)VALUES($1,$2,$3,$4,$5)'
         if len(entry_guild_db) > 0:
-            write_sql = 'UPDATE ' + entry_desc_sql(type) + '_guild SET track_time=$3 '
+            write_sql = 'UPDATE ' + entry_desc_sql(type) + '_guild SET track_time=$3,entry_time=$4,id_user=$5'
             write_sql += 'WHERE id_' + entry_desc_sql(type) + '=$1 AND id_guild=$2'
-        await conn.execute(write_sql, entry['id'], channel_state['id_guild'], track_time)
-        log_sql = 'INSERT INTO ' + entry_desc_sql(type) + '_guild_log(id_' + entry_desc_sql(type)
-        log_sql += ',id_guild,log_date,log_user)VALUES($1,$2,$3,$4)'
-        log_date = datetime.now()
-        log_user_str = str(log_user)
-        await conn.execute(log_sql, entry['id'], channel_state['id_guild'], log_date, log_user_str)
+        await conn.execute(write_sql, entry['id'], channel_state['id_guild'], track_time, entry_time, id_user)
+        entry_log = None
+        for _entry_log in channel_state['entry_log_list']:
+            if _entry_log['entry'] == entry:
+                entry_log = _entry_log
+                break
+        if entry_log is not None:
+            channel_state['entry_log_list'].remove(entry_log)
         channel_state['entry_log_list'].appendleft({
             'entry': entry,
-            'log_date': log_date,
-            'log_user': log_user_str
+            'entry_time': entry_time,
+            'id_user': id_user
         })
         if len(channel_state['entry_log_list']) > 3:
             channel_state['entry_log_list'].pop()
@@ -455,10 +550,10 @@ async def update_track_time(bot, channel_state, entry, mins_ago, log_user):
         msg += entry_state['entry']['map']
         msg += ')'
     msg += ' in '
-    msg += str(int(entry_state['r1']))
+    msg += fmt_r1_r2(int(entry_state['r1']))
     if type == TrackType.MVP:
         msg += ' to '
-        msg += str(int(entry_state['r2']))
+        msg += fmt_r1_r2(int(entry_state['r2']))
     msg += ' minutes.'
     return msg
 
@@ -491,62 +586,51 @@ def calc_remaining_time(entry_state, track_time, type):
 
 async def update_channel_message(bot, channel_state):
     type = channel_state['type']
-    table = []
-    table_labels = []
-    table_labels.append('Name')
-    if type == TrackType.MVP:
-        table_labels.append('Map')
-    table_labels.append('Remaining Time')
-    table.append(table_labels)
+    names = []
+    maps = []
+    remaining_times = []
     cmp = 'r2' if type == TrackType.MVP else 'r1'
     for entry_state in channel_state['entry_state_list']:
-        if entry_state[cmp] <= -bot.config['table_entry_expiration_mins']:
-            entry_state['r1'] = -999
-            if type == TrackType.MVP:
-                entry_state['r2'] = -999
-            conn = await bot.pool.acquire()
-            try:
-                sql  = 'DELETE FROM ' + entry_desc_sql(type) + '_guild '
-                sql += 'WHERE id_guild=$1 AND id_' + entry_desc_sql(type) + '=$2'
-                await conn.execute(sql, channel_state['id_guild'], entry_state['entry']['id'])
-            finally:
-                await bot.pool.release(conn)
         if entry_state[cmp] > -bot.config['table_entry_expiration_mins']:
-            remaining_time = str(int(entry_state['r1']))
+            remaining_time = fmt_r1_r2(int(entry_state['r1']))
             if type == TrackType.MVP:
-                remaining_time += ' to ' + str(int(entry_state['r2']))
+                remaining_time += ' to ' + fmt_r1_r2(int(entry_state['r2']))
             remaining_time += ' mins'
-            table_row = []
-            table_row.append(entry_state['entry']['name'])
+            names.append(entry_state['entry']['name'])
             if type == TrackType.MVP:
-                table_row.append(entry_state['entry']['map'])
-            table_row.append(remaining_time)
-            table.append(table_row)
-    result = 'No ' + entry_desc(type) + ' has been tracked.'
-    if len(table) > 1:
+                maps.append(entry_state['entry']['map'])
+            remaining_times.append(remaining_time)
+    embed = discord.Embed()
+    embed.colour = discord.Colour.gold()
+    embed.title = (':crown: ' if type == TrackType.MVP else ':pick: ') + entry_desc(type) + 'S'
+    if len(names) == 0:
+        embed.add_field(name=':x:', value='No ' + entry_desc(type) + ' has been tracked.', inline=False)
+    else:
         max_length = 20
-        if len(table) > max_length + 1:
-            diff = len(table) - max_length
+        if len(names) > max_length + 1:
+            diff = len(names) - max_length
             for i in range(0, diff):
-                table.pop()
-            table_row = []
-            table_row.append('and ' + str(diff) + ' more...')
-            if type == TrackType.MVP:
-                table_row.append('')
-            table_row.append('')
-            table.append(table_row)
-        result = entry_desc(type) + 'S\n'
-        result += terminaltables.AsciiTable(table).table
+                names.pop()
+                if type == TrackType.MVP:
+                    maps.pop()
+                remaining_times.pop()
+            names.append('and ' + str(diff) + ' more...')
+        embed.add_field(name='Name', value=fmt_column(names), inline=True)
+        if type == TrackType.MVP:
+            embed.add_field(name='Map', value=fmt_column(maps), inline=True)
+        embed.add_field(name='Remaining Time', value=fmt_column(remaining_times), inline=True)
     if len(channel_state['entry_log_list']) > 0:
-        result += '\n\nTRACK LOG:\n'
+        result = ''
         for entry_log in channel_state['entry_log_list']:
-            milliseconds = (entry_log['log_date'] - datetime.now()) / timedelta(milliseconds=1)
-            result += '[' + DateUtil.fmt_time_short(milliseconds) + ']'
+            if result != '':
+                result += '\n'
+            milliseconds = (entry_log['entry_time'] - datetime.now()) / timedelta(milliseconds=1)
+            result += '**[' + DateUtil.fmt_time_short(milliseconds) + ']**'
             result += ' ' + entry_log['entry']['name']
             if type == TrackType.MVP:
                 result += ' (' + entry_log['entry']['map'] + ')'
-            result += ' by ' + entry_log['log_user']
-            result += '\n'
+            result += ' by <@' + str(entry_log['id_user']) + '>'
+        embed.add_field(name='Track Log', value=result, inline=False)
     guild = next((x for x in bot.guilds if x.id == channel_state['id_guild']), None)
     if guild is None:
         return
@@ -557,11 +641,11 @@ async def update_channel_message(bot, channel_state):
     if channel_state['id_message'] is not None:
         message = await CoroutineUtil.run_with_retries(channel.fetch_message(channel_state['id_message']))
     if message is None:
-        message = await CoroutineUtil.run(channel.send(content=fmt_msg(result)))
+        message = await CoroutineUtil.run(channel.send(embed=embed))
         if message is not None:
             channel_state['id_message'] = message.id
     else:
-        await CoroutineUtil.run(message.edit(content=fmt_msg(result)))
+        await CoroutineUtil.run(message.edit(embed=embed, content=''))
         await CoroutineUtil.run(message.clear_reactions())
 
 def validate_channel(bot, channel):
@@ -622,10 +706,18 @@ def entry_desc_sql(type):
 def entry_desc(type, sql=False):
     if sql:
         return 'mvp' if type == TrackType.MVP else 'mining'
-    return 'MVP' if type == TrackType.MVP else 'MINING ZONE'
+    return 'MVP' if type == TrackType.MVP else 'MINING LOCATION'
 
-def fmt_msg(msg):
-    return '```\n' + msg + '```'
+def fmt_r1_r2(val):
+    return str(val) if val > 0 else '**' + str(val) + '**'
+
+def fmt_column(values):
+    result = ''
+    for value in values:
+        if result != '':
+            result += '\n'
+        result += value
+    return result
 
 def setup(bot):
     bot.add_cog(Track(bot))

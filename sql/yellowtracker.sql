@@ -1,6 +1,4 @@
 /*
-DROP TABLE IF EXISTS mining_guild_log;
-DROP TABLE IF EXISTS mvp_guild_log;
 DROP TABLE IF EXISTS mining_guild;
 DROP TABLE IF EXISTS mining;
 DROP TABLE IF EXISTS mvp_guild;
@@ -59,6 +57,8 @@ CREATE TABLE mvp_guild (
     id_mvp integer NOT NULL,
     id_guild bigint NOT NULL,
     track_time timestamp without time zone NOT NULL,
+    entry_time timestamp without time zone NOT NULL,
+    id_user bigint NOT NULL,
     CONSTRAINT mvp_guild_pk PRIMARY KEY (id_mvp, id_guild)
 );
 
@@ -66,23 +66,9 @@ CREATE TABLE mining_guild (
     id_mining integer NOT NULL,
     id_guild bigint NOT NULL,
     track_time timestamp without time zone NOT NULL,
+    entry_time timestamp without time zone NOT NULL,
+    id_user bigint NOT NULL,
     CONSTRAINT mining_guild_pk PRIMARY KEY (id_mining, id_guild)
-);
-
-CREATE TABLE mvp_guild_log (
-    id_mvp integer NOT NULL,
-    id_guild bigint NOT NULL,
-    log_date timestamp without time zone NOT NULL,
-    log_user text NOT NULL,
-    CONSTRAINT mvp_guild_log_pk PRIMARY KEY (id_mvp, id_guild, log_date, log_user)
-);
-
-CREATE TABLE mining_guild_log (
-    id_mining integer NOT NULL,
-    id_guild bigint NOT NULL,
-    log_date timestamp without time zone NOT NULL,
-    log_user text NOT NULL,
-    CONSTRAINT mining_guild_log_pk PRIMARY KEY (id_mining, id_guild, log_date, log_user)
 );
 
 INSERT INTO global_parameter(id)VALUES(1);
@@ -126,8 +112,8 @@ INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Ifrit','thor_v03',660
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Kiel D-01','kh_dun02',120,180,NULL,NULL);
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Kraken','iz_dun05',120,130,105,135);
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Ktullanux','ice_dun03',120,120,NULL,NULL);
-INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Kublin Unres','schg_dun01',240,360,NULL,NULL);
-INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Kublin Vanilla','arug_dun01',240,360,NULL,NULL);
+INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Kublin Unres','arug_dun01',240,360,NULL,NULL);
+INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Kublin Vanilla','schg_dun01',240,360,NULL,NULL);
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Lady Tanee','ayo_dun02',420,430,NULL,NULL);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'LT');
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Tanee');
@@ -177,17 +163,15 @@ INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Bacsojin');
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro)VALUES('Wounded Morroc','moc_fild22',720,900,NULL,NULL);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'WM');
 
-INSERT INTO mining(name)VALUES('Coal Mine');
-INSERT INTO mining(name)VALUES('Payon');
-INSERT INTO mining(name)VALUES('Einbech');
-INSERT INTO mining(name)VALUES('Geffen');
-INSERT INTO mining(name)VALUES('Thor');
-INSERT INTO mining(name)VALUES('Magma');
-INSERT INTO mining(name)VALUES('Ice Dungeon');
-INSERT INTO mining(name)VALUES('Izlude');
-INSERT INTO mining(name)VALUES('Louyang');
-INSERT INTO mining(name)VALUES('Comodo North');
-INSERT INTO mining(name)VALUES('Comodo East');
-INSERT INTO mining(name)VALUES('Comodo West');
-INSERT INTO mining(name)VALUES('Umbala');
-INSERT INTO mining(name)VALUES('Mistress');
+INSERT INTO mining(name)VALUES('Payon Dungeon F1, F2');
+INSERT INTO mining(name)VALUES('Coal Mine Entrance, F1, F2, F3');
+INSERT INTO mining(name)VALUES('Einbech Dungeon Entrance, F1, F2');
+INSERT INTO mining(name)VALUES('Geffen Dungeon F1, F2, F3');
+INSERT INTO mining(name)VALUES('Thor Volcano F1, F2, F3');
+INSERT INTO mining(name)VALUES('Magma Dungeon F1, F2');
+INSERT INTO mining(name)VALUES('Ice Dungeon F1, F2, F3');
+INSERT INTO mining(name)VALUES('Byalan Dungeon F1, F2, F3, F4, F5');
+INSERT INTO mining(name)VALUES('Louyang F1, F2');
+INSERT INTO mining(name)VALUES('Comodo West, North, East');
+INSERT INTO mining(name)VALUES('Mistress Map');
+INSERT INTO mining(name)VALUES('Umbala Dungeon F1, F2');

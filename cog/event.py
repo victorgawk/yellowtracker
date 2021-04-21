@@ -34,7 +34,19 @@ weekly_events = [
 {'name':'GMC','type':'gmc','weekday':'6','begin':'18:00','end':'20:00'},
 {'name':'GMC','type':'gmc','weekday':'7','begin':'00:00','end':'02:00'},
 {'name':'GMC','type':'gmc','weekday':'7','begin':'11:00','end':'13:00'},
-{'name':'GMC','type':'gmc','weekday':'7','begin':'15:00','end':'17:00'}
+{'name':'GMC','type':'gmc','weekday':'7','begin':'15:00','end':'17:00'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'2','begin':'04:00','end':'05:00'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'2','begin':'10:00','end':'11:00'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'2','begin':'16:00','end':'17:00'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'4','begin':'04:00','end':'05:00'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'4','begin':'10:00','end':'11:00'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'4','begin':'16:00','end':'17:00'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'6','begin':'04:00','end':'06:00'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'6','begin':'10:00','end':'12:00'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'6','begin':'18:30','end':'20:30'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'7','begin':'06:15','end':'08:15'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'7','begin':'10:00','end':'12:00'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'7','begin':'15:00','end':'17:00'}
 ]
 
 class Event(Cog):
@@ -85,6 +97,25 @@ class Event(Cog):
         if gmc_map['tomorrow'] != '':
             embed.add_field(name='Tomorrow', value=gmc_map['tomorrow'], inline=False)
         footer = 'Server Time (' + self.bot.tz_str + '): ' 
+        footer += DateUtil.fmt_dt(DateUtil.get_dt_now(self.bot.tz_str))
+        embed.set_footer(text=footer)
+        await CoroutineUtil.run(ctx.send(embed=embed))
+
+    @commands.command(help='Show TalonRO BG Happy Hour times')
+    @commands.bot_has_permissions(send_messages=True)
+    async def bghh(self, ctx):
+        bghh_map = get_bghh_map(self.bot, timezone(self.bot.tz_str))
+        embed = discord.Embed()
+        embed.title = ':crossed_swords: BG Happy Hour'
+        embed.colour = discord.Colour.gold()
+        if bghh_map['ongoing'] != '':
+            embed.add_field(name='Ongoing :boom:', value=bghh_map['ongoing'], inline=False)
+        embed.add_field(name='Next :arrow_right:', value=bghh_map['next'], inline=False)
+        if bghh_map['today'] != '':
+            embed.add_field(name='Today', value=bghh_map['today'], inline=False)
+        if bghh_map['tomorrow'] != '':
+            embed.add_field(name='Tomorrow', value=bghh_map['tomorrow'], inline=False)
+        footer = 'Server Time (' + self.bot.tz_str + '): '
         footer += DateUtil.fmt_dt(DateUtil.get_dt_now(self.bot.tz_str))
         embed.set_footer(text=footer)
         await CoroutineUtil.run(ctx.send(embed=embed))
@@ -159,11 +190,11 @@ def get_gmc_map(bot, timezone):
     gmc_map['tomorrow'] = ''
     next_evt = evts[0]
     for evt in evts:
-        str_woe = '' + format_evt(bot, evt, timezone) + '\n'
+        str_gmc = '' + format_evt(bot, evt, timezone) + '\n'
         if int(evt['weekday']) == weekday_today:
-            gmc_map['today'] += str_woe
+            gmc_map['today'] += str_gmc
         elif int(evt['weekday']) == weekday_tomorrow:
-            gmc_map['tomorrow'] += str_woe
+            gmc_map['tomorrow'] += str_gmc
         if evt['dt_begin'] <= dt_now <= evt['dt_end']:
             gmc_map['ongoing'] = format_evt(bot, evt, timezone)
         if evt['dt_begin'] <= dt_now:
@@ -198,6 +229,33 @@ def get_woe_map(bot, timezone):
     if next_evt != None:
         woe_map['next'] = format_evt(bot, next_evt, timezone)
     return woe_map
+
+def get_bghh_map(bot, timezone):
+    dt_now = DateUtil.get_dt_now(bot.tz_str)
+    weekday_today = dt_now.isoweekday()
+    weekday_tomorrow = 1 if weekday_today == 7 else (weekday_today + 1)
+    evts = get_evts(bot, timezone, type='bghh')
+    bghh_map = {}
+    bghh_map['ongoing'] = ''
+    bghh_map['next'] = ''
+    bghh_map['today'] = ''
+    bghh_map['tomorrow'] = ''
+    next_evt = evts[0]
+    for evt in evts:
+        str_bghh = '' + format_evt(bot, evt, timezone) + '\n'
+        if int(evt['weekday']) == weekday_today:
+            bghh_map['today'] += str_bghh
+        elif int(evt['weekday']) == weekday_tomorrow:
+            bghh_map['tomorrow'] += str_bghh
+        if evt['dt_begin'] <= dt_now <= evt['dt_end']:
+            bghh_map['ongoing'] = format_evt(bot, evt, timezone)
+        if evt['dt_begin'] <= dt_now:
+            continue
+        if next_evt['dt_begin'] < dt_now or evt['dt_begin'] < next_evt['dt_begin']:
+            next_evt = evt
+    if next_evt != None:
+        bghh_map['next'] = format_evt(bot, next_evt, timezone)
+    return bghh_map
 
 def get_next_evt(bot, timezone):
     dt_now = DateUtil.get_dt_now(bot.tz_str)

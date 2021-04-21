@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord.ext.commands import has_permissions
 from base.cog import Cog
 from util.coroutine import CoroutineUtil
+from cog.track import TrackType
 
 class Admin(Cog):
     def __init__(self, bot):
@@ -63,12 +64,32 @@ class Admin(Cog):
             await self.bot.pool.release(conn)
         await CoroutineUtil.run(ctx.send('Member channel unset.'))
 
-    @commands.command(help='Lists all guilds that the bot is a member of')
+    @commands.command(help='Show bot settings')
+    @commands.guild_only()
+    @has_permissions(administrator=True)
+    @commands.bot_has_permissions(send_messages=True)
+    async def settings(self, ctx):
+        guild_state = self.bot.guild_state_map[ctx.guild.id]
+        mvp_channel = None
+        mining_channel = None
+        for channel_id in guild_state['channel_state_map']:
+            if guild_state['channel_state_map'][channel_id]['type'] == TrackType.MVP:
+                mvp_channel = next((x for x in ctx.guild.channels if x.id == channel_id), None)
+            else:
+                mining_channel = next((x for x in ctx.guild.channels if x.id == channel_id), None)
+        member_channel = next((x for x in ctx.guild.channels if x.id == guild_state['id_member_channel']), None)
+        msg = 'TalonRO MVP Times: :' + ('white_check_mark' if guild_state['talonro'] else 'x') + ':'
+        msg += '\nMVP Channel: ' + ('' if mvp_channel is None else mvp_channel.mention)
+        msg += '\nMining Channel: ' + ('' if mining_channel is None else mining_channel.mention)
+        msg += '\nMember Channel: ' + ('' if member_channel is None else member_channel.mention)
+        await CoroutineUtil.run(ctx.send(msg))
+
+    @commands.command(help='List all guilds that have this bot')
     @commands.dm_only()
     @commands.is_owner()
     @commands.bot_has_permissions(send_messages=True)
     async def guilds(self, ctx):
-        str = 'Connected to {0} guild(s):\n'.format(len(self.bot.guilds))
+        str = ''
         count = 0
         for guild in self.bot.guilds:
             str += '{0.name} ({0.id})\n'.format(guild)
@@ -77,8 +98,23 @@ class Admin(Cog):
                 await CoroutineUtil.run(ctx.send(str))
                 str = ''
                 count = 0
-        if count > 0:
-            await CoroutineUtil.run(ctx.send(str))
+        str += 'Total guilds: **{0}**'.format(len(self.bot.guilds))
+        await CoroutineUtil.run(ctx.send(str))
+
+    @commands.command(help='Send a direct message to each user who own a server that have this bot')
+    @commands.dm_only()
+    @commands.is_owner()
+    @commands.bot_has_permissions(send_messages=True)
+    async def notify(self, ctx, user_msg):
+        users_id = set()
+        for guild in self.bot.guilds:
+            users_id.add(guild.owner_id)
+        for user_id in users_id:
+            user = await CoroutineUtil.run(self.bot.fetch_user(user_id))
+            if user is not None:
+                msg = 'You are receiving this message because you own a discord server that have this bot.'
+                msg += '\n\n' + user_msg
+                await CoroutineUtil.run(user.send(msg))
 
 async def send_member_message(bot, guild, user, title, description):
     guild_state = bot.guild_state_map[guild.id]
