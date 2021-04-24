@@ -54,8 +54,6 @@ async def on_ready():
             guild_state['id_member_channel'] = db_guild['id_member_channel']
         for db_guild in db_guild_list:
             if next((x for x in bot.guilds if x.id == db_guild['id']), None) is None:
-                await conn.execute('DELETE FROM mvp_guild_log WHERE id_guild=$1', db_guild['id'])
-                await conn.execute('DELETE FROM mining_guild_log WHERE id_guild=$1', db_guild['id'])
                 await conn.execute('DELETE FROM mvp_guild WHERE id_guild=$1', db_guild['id'])
                 await conn.execute('DELETE FROM mining_guild WHERE id_guild=$1', db_guild['id'])
                 await conn.execute('DELETE FROM guild WHERE id=$1', db_guild['id'])
@@ -92,8 +90,6 @@ async def on_guild_remove(guild):
     bot.guild_state_map[guild.id] = None
     conn = await bot.pool.acquire()
     try:
-        await conn.execute('DELETE FROM mvp_guild_log WHERE id_guild=$1', guild.id)
-        await conn.execute('DELETE FROM mining_guild_log WHERE id_guild=$1', guild.id)
         await conn.execute('DELETE FROM mvp_guild WHERE id_guild=$1', guild.id)
         await conn.execute('DELETE FROM mining_guild WHERE id_guild=$1', guild.id)
         await conn.execute('DELETE FROM guild WHERE id=$1', guild.id)
