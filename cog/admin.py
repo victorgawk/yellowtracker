@@ -79,6 +79,7 @@ class Admin(Cog):
                 mining_channel = next((x for x in ctx.guild.channels if x.id == channel_id), None)
         member_channel = next((x for x in ctx.guild.channels if x.id == guild_state['id_member_channel']), None)
         msg = 'TalonRO MVP Times: :' + ('white_check_mark' if guild_state['talonro'] else 'x') + ':'
+        msg += '\nMobile Layout: :' + ('white_check_mark' if guild_state['mobile'] else 'x') + ':'
         msg += '\nMVP Channel: ' + ('' if mvp_channel is None else mvp_channel.mention)
         msg += '\nMining Channel: ' + ('' if mining_channel is None else mining_channel.mention)
         msg += '\nMember Channel: ' + ('' if member_channel is None else member_channel.mention)

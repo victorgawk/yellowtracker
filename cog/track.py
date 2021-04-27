@@ -188,6 +188,24 @@ class Track(Cog):
         msg += 'enabled.' if talonro else 'disabled.'
         await CoroutineUtil.run(ctx.send(msg))
 
+    @commands.command(help='Enable/disable MVP list mobile layout')
+    @commands.guild_only()
+    @has_permissions(administrator=True)
+    @commands.bot_has_permissions(send_messages=True)
+    async def mobile(self, ctx):
+        guild_state = self.bot.guild_state_map[ctx.guild.id]
+        mobile = not guild_state['mobile']
+        guild_state['mobile'] = mobile
+        conn = await self.bot.pool.acquire()
+        try:
+            write_sql = 'UPDATE guild SET mobile=$2 WHERE id=$1'
+            await conn.execute(write_sql, ctx.guild.id, mobile)
+        finally:
+            await self.bot.pool.release(conn)
+        msg = 'MVP list mobile layout '
+        msg += 'enabled.' if mobile else 'disabled.'
+        await CoroutineUtil.run(ctx.send(msg))
+
     @commands.command(help='Set the MVP channel')
     @commands.guild_only()
     @has_permissions(administrator=True)
@@ -585,24 +603,35 @@ def calc_remaining_time(entry_state, track_time, type):
         entry_state['r2'] = entry_state['t2'] - mins_ago
 
 async def update_channel_message(bot, channel_state):
+    mobile = bot.guild_state_map.get(channel_state['id_guild'])['mobile']
     type = channel_state['type']
+    embed = discord.Embed()
+    embed.colour = discord.Colour.gold()
+    embed.title = (':crown: ' if type == TrackType.MVP else ':pick: ') + entry_desc(type) + 'S'
     names = []
     maps = []
     remaining_times = []
+    id_mob_first_entry = None
     cmp = 'r2' if type == TrackType.MVP else 'r1'
     for entry_state in channel_state['entry_state_list']:
         if entry_state[cmp] > -bot.config['table_entry_expiration_mins']:
             remaining_time = fmt_r1_r2(int(entry_state['r1']))
             if type == TrackType.MVP:
+                if id_mob_first_entry is None:
+                    id_mob_first_entry = entry_state['entry']['id_mob']
                 remaining_time += ' to ' + fmt_r1_r2(int(entry_state['r2']))
             remaining_time += ' mins'
-            names.append(entry_state['entry']['name'])
-            if type == TrackType.MVP:
-                maps.append(entry_state['entry']['map'])
-            remaining_times.append(remaining_time)
-    embed = discord.Embed()
-    embed.colour = discord.Colour.gold()
-    embed.title = (':crown: ' if type == TrackType.MVP else ':pick: ') + entry_desc(type) + 'S'
+            if mobile:
+                name = entry_state['entry']['name']
+                if type == TrackType.MVP:
+                    name += ' (' + entry_state['entry']['map'] + ')'
+                name += ' - ' + remaining_time
+                names.append(name)
+            else:
+                names.append(entry_state['entry']['name'])
+                if type == TrackType.MVP:
+                    maps.append(entry_state['entry']['map'])
+                remaining_times.append(remaining_time)
     if len(names) == 0:
         embed.add_field(name=':x:', value='No ' + entry_desc(type) + ' has been tracked.', inline=False)
     else:
@@ -615,10 +644,15 @@ async def update_channel_message(bot, channel_state):
                     maps.pop()
                 remaining_times.pop()
             names.append('and ' + str(diff) + ' more...')
-        embed.add_field(name='Name', value=fmt_column(names), inline=True)
         if type == TrackType.MVP:
-            embed.add_field(name='Map', value=fmt_column(maps), inline=True)
-        embed.add_field(name='Remaining Time', value=fmt_column(remaining_times), inline=True)
+            embed.set_thumbnail(url="https://file5s.ratemyserver.net/mobs/" + str(id_mob_first_entry) + ".gif")
+        if mobile:
+            embed.add_field(name='Name', value=fmt_column(names), inline=False)
+        else:
+            embed.add_field(name='Name', value=fmt_column(names), inline=True)
+            if type == TrackType.MVP:
+                embed.add_field(name='Map', value=fmt_column(maps), inline=True)
+            embed.add_field(name='Remaining Time', value=fmt_column(remaining_times), inline=True)
     if len(channel_state['entry_log_list']) > 0:
         result = ''
         for entry_log in channel_state['entry_log_list']:

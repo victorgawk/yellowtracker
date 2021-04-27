@@ -25,6 +25,7 @@ async def on_ready():
         guild_state = {
             'id_guild': guild.id,
             'talonro': True,
+            'mobile': False,
             'id_mvp_channel': None,
             'id_mining_channel': None,
             'id_member_channel': None,
@@ -49,6 +50,7 @@ async def on_ready():
                 continue
             guild_state = bot.guild_state_map[guild.id]
             guild_state['talonro'] = db_guild['talonro']
+            guild_state['mobile'] = db_guild['mobile']
             guild_state['id_mvp_channel'] = db_guild['id_mvp_channel']
             guild_state['id_mining_channel'] = db_guild['id_mining_channel']
             guild_state['id_member_channel'] = db_guild['id_member_channel']
@@ -67,6 +69,7 @@ async def on_guild_join(guild):
     guild_state = {
         'id_guild': guild.id,
         'talonro': True,
+        'mobile': False,
         'id_mvp_channel': None,
         'id_mining_channel': None,
         'id_member_channel': None,
