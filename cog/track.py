@@ -625,7 +625,7 @@ async def update_channel_message(bot, channel_state):
                 name = entry_state['entry']['name']
                 if type == TrackType.MVP:
                     name += ' (' + entry_state['entry']['map'] + ')'
-                name += ' - ' + remaining_time
+                name += ' | ' + remaining_time
                 names.append(name)
             else:
                 names.append(entry_state['entry']['name'])
