@@ -118,7 +118,7 @@ INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro,id_mob)VALUES('Kublin Vanilla
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro,id_mob)VALUES('Lady Tanee','ayo_dun02',420,430,360,490,1688);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'LT');
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Tanee');
-INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro,id_mob)VALUES('Leak','dew_dun01',120,130,105,135,2156);
+INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro,id_mob)VALUES('Leak','dew_dun01',120,130,75,105,2156);
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro,id_mob)VALUES('Lord of the Dead','niflheim',133,133,NULL,NULL,1373);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'LOD');
 INSERT INTO mvp(name,map,t1,t2,t1talonro,t2talonro,id_mob)VALUES('Maya','anthell02',120,130,105,135,1147);

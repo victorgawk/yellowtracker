@@ -71,7 +71,7 @@ Ktullanux | - | ice_dun03 | 120~120 mins | 120~120 mins |
 Kublin Unres | - | arug_dun01 | 240~360 mins | 240~360 mins |
 Kublin Vanilla | - | schg_dun01 | 240~360 mins | 240~360 mins |
 Lady Tanee | Tanee; LT | ayo_dun02 | 420~430 mins | 360~490 mins |
-Leak | - | dew_dun01 | 120~130 mins | 105~135 mins |
+Leak | - | dew_dun01 | 120~130 mins | 75~105 mins |
 Lord of the Dead | LOD | niflheim | 133~133 mins | 133~133 mins |
 Maya | - | anthell02 | 120~130 mins | 105~135 mins |
 Maya Purple | MP | anthell01 | 120~180 mins | 120~180 mins |
