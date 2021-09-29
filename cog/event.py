@@ -20,6 +20,7 @@ weekly_events = [
 {'name':'BG Happy Hour','type':'bghh','weekday':'4','begin':'04:00','end':'05:00'},
 {'name':'BG Happy Hour','type':'bghh','weekday':'4','begin':'10:00','end':'11:00'},
 {'name':'BG Happy Hour','type':'bghh','weekday':'4','begin':'16:00','end':'17:00'},
+{'name':'BG Happy Hour','type':'bghh','weekday':'5','begin':'04:00','end':'06:00'},
 {'name':'BG Happy Hour','type':'bghh','weekday':'6','begin':'04:00','end':'06:00'},
 {'name':'BG Happy Hour','type':'bghh','weekday':'6','begin':'10:00','end':'12:00'},
 {'name':'BG Happy Hour','type':'bghh','weekday':'6','begin':'18:30','end':'20:30'},
