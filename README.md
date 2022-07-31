@@ -2,14 +2,47 @@
 
 Yellow Tracker is a discord bot to track MVPs.
 
-Instructions:
+# Run local
 
-1. Add the bot to your server through this link: https://discordapp.com/oauth2/authorize?client_id=417462153528737792&permissions=8192&scope=bot
+Prerequisites to run this application:
 
-2. Define a channel from server to be used exclusively for MVP tracking (OBS: is strongly recommended that you use a new channel for this). This is done by using the **!setmvpchannel** command. The bot in this channel will keep a list of tracked MVPs and their respective respawn times. Only users with the "ADMINISTRATOR" permission can use this command.
+- Python 3 with the following packages: `discord.py`, `asyncpg` and `pytz`
+- A postgreSQL database
+
+OBS: The database is needed to persist tracked MVPs and user preferences.
+
+For a local dev run, in `base/bot.py` file, replace the following lines:
+
+```
+self.config = {
+    'bot_user_token': str(os.environ.get('BOT_USER_TOKEN')),
+    'database_url': str(os.environ.get('DATABASE_URL')),
+    'del_msg_after_secs': int(os.environ.get('DEL_MSG_AFTER_SECS')),
+    'table_entry_expiration_mins': int(os.environ.get('TABLE_ENTRY_EXPIRATION_MINS')),
+    'table_refresh_rate_secs': int(os.environ.get('TABLE_REFRESH_RATE_SECS')),
+}
+```
+
+by:
+
+```
+self.config = {
+    'bot_user_token': 'discord token',
+    'database_url': 'postgres://username:password@host:port/database',
+    'del_msg_after_secs': 10,
+    'table_entry_expiration_mins': 20,
+    'table_refresh_rate_secs': 5,
+}
+```
+
+and then execute the following command: `python bot.py`
+
+## Usage
+
+- Define a channel from server to be used exclusively for MVP tracking (OBS: is strongly recommended that you use a new channel for this). This is done by using the **!setmvpchannel** command. The bot in this channel will keep a list of tracked MVPs and their respective respawn times. Only users with the "ADMINISTRATOR" permission can use this command.
   - **WARNING**: After you use this command, **ALL** messages from the channel (if there is any) will be erased and this will be irreversible!!! Be sure that you choose the right channel.
 
-3. Use the **!track** command to track a MVP that has been defeated. OBS.: can only be used inside the MVP tracking channel.
+- Use the **!track** command to track a MVP that has been defeated. OBS.: can only be used inside the MVP tracking channel.
 
 OBS: In  addition to MVPs, the bot also can be used to track mining locations, where each location represents a group of maps (for instance, the mining location "Ice Dungeon (F1, F2, F3)" corresponds to the maps "ice_dun01", "ice_dun02" and "ice_dun03"). As well as MVPs, you need to define a channel to be used exclusively to track mining locations. To do this use the **!setminingchannel** command. This channel will keep the list of tracked mining locations.
 
