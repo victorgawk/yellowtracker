@@ -2,7 +2,7 @@
 
 Yellow Tracker is a discord bot to track MVPs.
 
-# Run local
+## Run local
 
 Prerequisites to run this application:
 
@@ -11,8 +11,8 @@ Prerequisites to run this application:
 
 OBS: The database is needed to persist tracked MVPs and user preferences.
 
-For a local dev run, in `base/bot.py` file, replace the following lines:
-
+1. Run the `sql/yellowtracker.sql` file on the postgres database to create tables and records needed by the application.
+2. In `base/bot.py` file, replace the following lines:
 ```
 self.config = {
     'bot_user_token': str(os.environ.get('BOT_USER_TOKEN')),
@@ -22,9 +22,7 @@ self.config = {
     'table_refresh_rate_secs': int(os.environ.get('TABLE_REFRESH_RATE_SECS')),
 }
 ```
-
 by:
-
 ```
 self.config = {
     'bot_user_token': 'discord token',
@@ -34,8 +32,7 @@ self.config = {
     'table_refresh_rate_secs': 5,
 }
 ```
-
-and then execute the following command: `python bot.py`
+3. Execute the command: `python bot.py`
 
 ## Usage
 
@@ -46,7 +43,7 @@ and then execute the following command: `python bot.py`
 
 OBS: In  addition to MVPs, the bot also can be used to track mining locations, where each location represents a group of maps (for instance, the mining location "Ice Dungeon (F1, F2, F3)" corresponds to the maps "ice_dun01", "ice_dun02" and "ice_dun03"). As well as MVPs, you need to define a channel to be used exclusively to track mining locations. To do this use the **!setminingchannel** command. This channel will keep the list of tracked mining locations.
 
-Bot commands:
+### Bot commands:
 
 Command | Description
 ------- | ---------
@@ -66,7 +63,7 @@ Command | Description
 **!settings** | Show bot settings. Need "ADMINISTRATOR" permission.
 **!clean** | Remove all tracked MVPs from the list (useful after a server reboot). Need "ADMINISTRATOR" permission.
 
-MVP List:
+### MVP List:
 
 Name | Alias | Map | Respawn Time | TalonRO Respawn
 ---- | ----- | --- | ------------ | ---------------
@@ -132,7 +129,7 @@ Vesper | - | jupe_core | 120~130 mins | 105~135 mins |
 White Lady | Bacsojin | lou_dun03 | 116~126 mins | 116~126 mins |
 Wounded Morroc | WM | moc_fild22 | 720~900 mins | 720~900 mins |
 
-Mining locations:
+### Mining locations:
 
 Name|
 ----|
