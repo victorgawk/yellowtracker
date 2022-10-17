@@ -66,7 +66,7 @@ class Event(Cog):
         finally:
             await self.bot.pool.release(conn)
 
-    @commands.command(help='Show TalonRO War of Emperium times')
+    @commands.command(help='Show War of Emperium times')
     @commands.bot_has_permissions(send_messages=True)
     async def woe(self, ctx):
         woe_map = get_woe_map(self.bot, timezone(self.bot.tz_str))
@@ -83,7 +83,7 @@ class Event(Cog):
         embed.set_footer(text=footer)
         await CoroutineUtil.run(ctx.send(embed=embed))
 
-    @commands.command(help='Show TalonRO GM Challenge times')
+    @commands.command(help='Show GM Challenge times')
     @commands.bot_has_permissions(send_messages=True)
     async def gmc(self, ctx):
         gmc_map = get_gmc_map(self.bot, timezone(self.bot.tz_str))
@@ -102,7 +102,7 @@ class Event(Cog):
         embed.set_footer(text=footer)
         await CoroutineUtil.run(ctx.send(embed=embed))
 
-    @commands.command(help='Show TalonRO BG Happy Hour times')
+    @commands.command(help='Show BG Happy Hour times')
     @commands.bot_has_permissions(send_messages=True)
     async def bghh(self, ctx):
         bghh_map = get_bghh_map(self.bot, timezone(self.bot.tz_str))
@@ -152,7 +152,6 @@ class Event(Cog):
                     else:
                         str += ' '
                         str += DateUtil.fmt_time_short((race_begin - dt_now) / timedelta(milliseconds=1))
-                    str += ' (TalonRO)'
                     game = discord.Game(name=str)
                     await CoroutineUtil.run(self.bot.change_presence(activity=game))
                     return
@@ -164,7 +163,6 @@ class Event(Cog):
             else:
                 str += ' '
                 str += DateUtil.fmt_time_short((evt['dt_begin'] - dt_now) / timedelta(milliseconds=1))
-            str += ' (TalonRO)'
             game = discord.Game(name=str)
             await CoroutineUtil.run(self.bot.change_presence(activity=game))
 
@@ -322,5 +320,5 @@ def get_evts(bot, timezone, type=None):
     result.sort(key=lambda x: x['dt_begin'])
     return result
 
-def setup(bot):
-    bot.add_cog(Event(bot))
+async def setup(bot):
+    await bot.add_cog(Event(bot))

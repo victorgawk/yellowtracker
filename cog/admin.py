@@ -78,7 +78,7 @@ class Admin(Cog):
             else:
                 mining_channel = next((x for x in ctx.guild.channels if x.id == channel_id), None)
         member_channel = next((x for x in ctx.guild.channels if x.id == guild_state['id_member_channel']), None)
-        msg = 'TalonRO MVP Times: :' + ('white_check_mark' if guild_state['talonro'] else 'x') + ':'
+        msg = 'Custom MVP Times: :' + ('white_check_mark' if guild_state['talonro'] else 'x') + ':'
         msg += '\nMobile Layout: :' + ('white_check_mark' if guild_state['mobile'] else 'x') + ':'
         msg += '\nMVP Channel: ' + ('' if mvp_channel is None else mvp_channel.mention)
         msg += '\nMining Channel: ' + ('' if mining_channel is None else mining_channel.mention)
@@ -134,5 +134,5 @@ async def send_member_message(bot, guild, user, title, description):
     embed.set_footer(text='User ID: {0.id}'.format(user))
     await CoroutineUtil.run(channel.send(embed=embed))
 
-def setup(bot):
-    bot.add_cog(Admin(bot))
+async def setup(bot):
+    await bot.add_cog(Admin(bot))

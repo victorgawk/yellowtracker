@@ -170,11 +170,11 @@ class Track(Cog):
                 await CoroutineUtil.run(user_state['bot_msg'].clear_reactions())
                 await set_channel(self.bot, user_state['bot_msg'].channel, type)
 
-    @commands.command(help='Enable/disable custom TalonRO MVP respawn times')
+    @commands.command(help='Enable/disable custom MVP respawn times')
     @commands.guild_only()
     @has_permissions(administrator=True)
     @commands.bot_has_permissions(send_messages=True)
-    async def talonro(self, ctx):
+    async def custom(self, ctx):
         guild_state = self.bot.guild_state_map[ctx.guild.id]
         talonro = not guild_state['talonro']
         guild_state['talonro'] = talonro
@@ -184,7 +184,7 @@ class Track(Cog):
             await conn.execute(write_sql, ctx.guild.id, talonro)
         finally:
             await self.bot.pool.release(conn)
-        msg = 'TalonRO custom MVP respawn times '
+        msg = 'Custom MVP respawn times '
         msg += 'enabled.' if talonro else 'disabled.'
         await CoroutineUtil.run(ctx.send(msg))
 
@@ -346,14 +346,14 @@ class Track(Cog):
                 channel = next((x for x in guild.channels if x.id == channel_state['id_channel']), None)
                 if validate_channel(self.bot, channel) is not None:
                     continue
-                msgs = await CoroutineUtil.run(channel.history(limit=100).flatten())
+                msgs = [message async for message in channel.history(limit=100)]
                 if msgs is None:
                     continue
                 for msg in msgs:
                     if msg.id == channel_state['id_message']:
                         continue
                     msg_date = msg.created_at if msg.edited_at is None else msg.edited_at
-                    if datetime.utcnow() - msg_date > timedelta(seconds=self.bot.config['del_msg_after_secs']):
+                    if datetime.utcnow() - msg_date.replace(tzinfo=None) > timedelta(seconds=self.bot.config['del_msg_after_secs']):
                         await CoroutineUtil.run(msg.delete())
 
 async def confirm_set_channel(bot, ctx, type):
@@ -513,7 +513,7 @@ async def init_channel(bot, channel_state):
     if validate_channel(bot, channel) is not None:
         return
     channel_state['id_message'] = None
-    msgs = await CoroutineUtil.run(channel.history(oldest_first=True).flatten())
+    msgs = [message async for message in channel.history(oldest_first=True)]
     if msgs is None:
         return
     msgs_to_delete = []
@@ -753,5 +753,5 @@ def fmt_column(values):
         result += value
     return result
 
-def setup(bot):
-    bot.add_cog(Track(bot))
+async def setup(bot):
+    await bot.add_cog(Track(bot))

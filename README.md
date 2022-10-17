@@ -47,10 +47,10 @@ OBS: In  addition to MVPs, the bot also can be used to track mining locations, w
 
 Command | Description
 ------- | ---------
-**!track NAME TIME** or **!t NAME TIME** | Report that MVP **NAME** died **TIME** minutes ago. The **TIME** argument is optional. If you ommit this argument means the MVP has died just now. If **TIME** argument have the syntax HH:MM that means that MVP died at that time on TalonRO server time. In the mining channel, this command reports that the mining location **NAME** was visited **TIME** minutes ago.
-**!woe** | Display the War of Emperium (WoE) times on TalonRO server.
-**!gmc** | Display the Game Master Challenge (GMC) times on TalonRO server.
-**!bghh** | Display the Battlegrounds Happy Hour times on TalonRO server.
+**!track NAME TIME** or **!t NAME TIME** | Report that MVP **NAME** died **TIME** minutes ago. The **TIME** argument is optional. If you ommit this argument means the MVP has died just now. If **TIME** argument have the syntax HH:MM that means that MVP died at that time on server time. In the mining channel, this command reports that the mining location **NAME** was visited **TIME** minutes ago.
+**!woe** | Display the War of Emperium (WoE) times.
+**!gmc** | Display the Game Master Challenge (GMC) times.
+**!bghh** | Display the Battlegrounds Happy Hour times.
 **!help** | Lists all commands available for your user.
 **!setmvpchannel** | Set the channel as MVP channel. Need "ADMINISTRATOR" permission.
 **!unsetmvpchannel** | Disable the MVP channel. Need "ADMINISTRATOR" permission.
@@ -58,14 +58,14 @@ Command | Description
 **!unsetminingchannel** | Disable the mining channel. Need "ADMINISTRATOR" permission.
 **!setmemberchannel** | Set a channel where the bot will send a message everytime a member join or left the server. Need "ADMINISTRATOR" permission.
 **!unsetmemberchannel** | Disable the member channel. Need "ADMINISTRATOR" permission.
-**!talonro** | Enable/disable TalonRO custom MVP respawn times (e.g. GTB respawn become 45 to 75 mins instead of 60 to 70 mins, Eddga become 105 to 135 instead of 120 to 130 mins, and so on). Need "ADMINISTRATOR" permission.
+**!custom** | Enable/disable custom MVP respawn times (e.g. GTB respawn become 45 to 75 mins instead of 60 to 70 mins, Eddga become 105 to 135 instead of 120 to 130 mins, and so on). Need "ADMINISTRATOR" permission.
 **!mobile** | Enable/disable track list mobile layout. Need "ADMINISTRATOR" permission.
 **!settings** | Show bot settings. Need "ADMINISTRATOR" permission.
 **!clean** | Remove all tracked MVPs from the list (useful after a server reboot). Need "ADMINISTRATOR" permission.
 
 ### MVP List:
 
-Name | Alias | Map | Respawn Time | TalonRO Respawn
+Name | Alias | Map | Respawn Time | Custom Respawn
 ---- | ----- | --- | ------------ | ---------------
 Amon Ra | - | moc_pryd06 | 60~70 mins | 45~75 mins |
 Atroce | - | ra_fild02 | 240~250 mins | 210~280 mins |

@@ -38,6 +38,7 @@ CREATE TABLE mvp (
     t2 integer NOT NULL,
     t1talonro integer,
     t2talonro integer,
+    id_mob integer NOT NULL,
     CONSTRAINT mvp_pk PRIMARY KEY (id)
 );
 

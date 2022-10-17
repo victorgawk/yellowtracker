@@ -8,15 +8,15 @@ import asyncio
 import math
 from base.bot import Bot
 
-bot = Bot(command_prefix='!')
+intents = discord.Intents.default()
+intents.message_content = True
+bot = Bot(command_prefix='!', intents=intents)
 
 extensions = (
     'Event',
     'Track',
     'Admin'
 )
-for extension in extensions:
-    bot.load_extension('cog.' + extension.lower())
 
 @bot.event
 async def on_ready():
@@ -104,6 +104,8 @@ async def on_command_error(ctx, error):
     return
 
 async def timer_thread(bot):
+    for extension in extensions:
+        await bot.load_extension('cog.' + extension.lower())
     while True:
         for extension in extensions:
             cog = bot.get_cog(extension)
@@ -115,8 +117,14 @@ async def timer_thread(bot):
 print('Bot started!'.format(bot))
 
 tasks = [
-    asyncio.ensure_future(timer_thread(bot)),
-    asyncio.ensure_future(bot.start(bot.config['bot_user_token']))
+    timer_thread(bot),
+    bot.start(bot.config['bot_user_token'])
 ]
-loop = asyncio.get_event_loop()
-loop.run_until_complete(asyncio.gather(*tasks))
+
+async def run_tasks_async():
+    return await asyncio.gather(*(tasks))
+
+def run_tasks():
+  asyncio.run(run_tasks_async())
+
+run_tasks()

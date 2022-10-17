@@ -1,0 +1,7 @@
+version: "3.9"
+
+services:
+    yellowtracker:
+        build: .
+        env_file:
+            - .env
