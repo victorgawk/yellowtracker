@@ -4,4 +4,4 @@ services:
     yellowtracker:
         build: .
         env_file:
-            - .env
+            - docker.env

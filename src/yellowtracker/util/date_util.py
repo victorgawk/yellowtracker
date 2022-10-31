@@ -2,7 +2,8 @@ from datetime import datetime
 from pytz import timezone
 import math
 
-class DateUtil(object):
+class DateUtil:
+
     @staticmethod
     def fmt_time(milliseconds):
         minutes = math.floor(math.floor(math.fabs(milliseconds) / 1000) / 60)
@@ -53,6 +54,6 @@ class DateUtil(object):
         #return dt.strftime('%Y-%m-%d %H:%M:%S %Z%z')
 
     @staticmethod
-    def get_dt_now(tz_str):
+    def get_dt_now(tz_str: str):
         dt_now = datetime.now()
         return dt_now.astimezone(timezone(tz_str))

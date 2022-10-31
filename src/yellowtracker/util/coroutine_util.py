@@ -1,6 +1,7 @@
 import asyncio
 
-class CoroutineUtil(object):
+class CoroutineUtil:
+
     @staticmethod
     async def run(coroutine):
         try:
@@ -15,7 +16,6 @@ class CoroutineUtil(object):
         while curr < max:
             try:
                 return await coroutine
-                break
             except:
                 curr += 1
                 await asyncio.sleep(curr)

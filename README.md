@@ -6,62 +6,50 @@ Yellow Tracker is a discord bot to track MVPs.
 
 Prerequisites to run this application:
 
-- Python 3 with the following packages: `discord.py`, `asyncpg` and `pytz`
-- A postgreSQL database
+- Python 3.10 or above
+- A discord bot token
+- A PostgreSQL database
 
-OBS: The database is needed to persist tracked MVPs and user preferences.
-
-1. Run the `sql/yellowtracker.sql` file on the postgres database to create tables and records needed by the application.
-2. In `base/bot.py` file, replace the following lines:
+1. In the PostgreSQL database, use the content from the file `sql/yellowtracker.sql` to create the initial database structure.
+2. In the `src` folder, create a file named `.env` with the following variables:
+```properties
+BOT_USER_TOKEN=your discord bot token
+DATABASE_URL=your PostgresSQL URL with the syntax postgres://username:password@host:port/database
+DEL_MSG_AFTER_SECS=time to delete a message in a track channel after message last update (default = 10 seconds)
+TABLE_ENTRY_EXPIRATION_MINS=time to remove an entry from the track table after entry max respawn was reached (default = 20 minutes)
+TABLE_REFRESH_RATE_SECS=track table refresh rate (default = 30 seconds)
+TIMEZONE=timezone used for datetimes in HH:MM format (default = PST8PDT)
+GUILD_ID=a single server ID to sync the slash commands (default = None)
 ```
-self.config = {
-    'bot_user_token': str(os.environ.get('BOT_USER_TOKEN')),
-    'database_url': str(os.environ.get('DATABASE_URL')),
-    'del_msg_after_secs': int(os.environ.get('DEL_MSG_AFTER_SECS')),
-    'table_entry_expiration_mins': int(os.environ.get('TABLE_ENTRY_EXPIRATION_MINS')),
-    'table_refresh_rate_secs': int(os.environ.get('TABLE_REFRESH_RATE_SECS')),
-}
-```
-by:
-```
-self.config = {
-    'bot_user_token': 'discord token',
-    'database_url': 'postgres://username:password@host:port/database',
-    'del_msg_after_secs': 10,
-    'table_entry_expiration_mins': 20,
-    'table_refresh_rate_secs': 5,
-}
-```
-3. Execute the command: `python bot.py`
+3. Inside a terminal/command prompt, go to the `src` folder.
+4. Execute the command `pip install -r requirements.txt` to install the application dependencies.
+5. Execute the command `python bot.py` to start the application.
 
 ## Usage
 
-- Define a channel from server to be used exclusively for MVP tracking (OBS: is strongly recommended that you use a new channel for this). This is done by using the **!setmvpchannel** command. The bot in this channel will keep a list of tracked MVPs and their respective respawn times. Only users with the "ADMINISTRATOR" permission can use this command.
+- Define a channel from your discord server to be used exclusively for MVP tracking (OBS: is strongly recommended that you use a new channel for this). This is done by using the **/setmvpchannel** command. The bot in this channel will keep a table with the tracked MVPs and their respective remaining times to respawn.
   - **WARNING**: After you use this command, **ALL** messages from the channel (if there is any) will be erased and this will be irreversible!!! Be sure that you choose the right channel.
 
-- Use the **!track** command to track a MVP that has been defeated. OBS.: can only be used inside the MVP tracking channel.
+- Use the **/track** command to track a MVP that has been defeated. OBS.: can only be used inside a MVP track channel.
 
-OBS: In  addition to MVPs, the bot also can be used to track mining locations, where each location represents a group of maps (for instance, the mining location "Ice Dungeon (F1, F2, F3)" corresponds to the maps "ice_dun01", "ice_dun02" and "ice_dun03"). As well as MVPs, you need to define a channel to be used exclusively to track mining locations. To do this use the **!setminingchannel** command. This channel will keep the list of tracked mining locations.
+OBS: In addition to MVPs, Yellow Tracker can also be used to track mining locations, where each location represents a collection with one or more maps (for instance, the mining location "Ice Dungeon (F1, F2, F3)" corresponds to the maps "ice_dun01", "ice_dun02" and "ice_dun03"). As well as MVPs, you need to define a track channel to be used exclusively for mining locations. To do this use the **/setminingchannel** command.
 
 ### Bot commands:
 
 Command | Description
 ------- | ---------
-**!track NAME TIME** or **!t NAME TIME** | Report that MVP **NAME** died **TIME** minutes ago. The **TIME** argument is optional. If you ommit this argument means the MVP has died just now. If **TIME** argument have the syntax HH:MM that means that MVP died at that time on server time. In the mining channel, this command reports that the mining location **NAME** was visited **TIME** minutes ago.
-**!woe** | Display the War of Emperium (WoE) times.
-**!gmc** | Display the Game Master Challenge (GMC) times.
-**!bghh** | Display the Battlegrounds Happy Hour times.
-**!help** | Lists all commands available for your user.
-**!setmvpchannel** | Set the channel as MVP channel. Need "ADMINISTRATOR" permission.
-**!unsetmvpchannel** | Disable the MVP channel. Need "ADMINISTRATOR" permission.
-**!setminingchannel** | Set the channel as mining channel. Need "ADMINISTRATOR" permission.
-**!unsetminingchannel** | Disable the mining channel. Need "ADMINISTRATOR" permission.
-**!setmemberchannel** | Set a channel where the bot will send a message everytime a member join or left the server. Need "ADMINISTRATOR" permission.
-**!unsetmemberchannel** | Disable the member channel. Need "ADMINISTRATOR" permission.
-**!custom** | Enable/disable custom MVP respawn times (e.g. GTB respawn become 45 to 75 mins instead of 60 to 70 mins, Eddga become 105 to 135 instead of 120 to 130 mins, and so on). Need "ADMINISTRATOR" permission.
-**!mobile** | Enable/disable track list mobile layout. Need "ADMINISTRATOR" permission.
-**!settings** | Show bot settings. Need "ADMINISTRATOR" permission.
-**!clean** | Remove all tracked MVPs from the list (useful after a server reboot). Need "ADMINISTRATOR" permission.
+**/track** `name` `time` | Report that MVP `name` died. The optional `time` argument can be used to determine the exact time the MVP died. Ommit this argument to report that the MVP died just now. If `time` argument is a single number then the MVP died `time` minutes ago. If `time` argument have the syntax `HH:MM` then the MVP died at `time` relative to the `TIMEZONE` environment variable.
+**/setmvpchannel** | Define the current channel as the MVP track channel.
+**/unsetmvpchannel** | Undo the MVP channel definition in the discord server.
+**/setminingchannel** | Define the current channel as the mining location track channel.
+**/unsetminingchannel** | Undo the mining location channel definition in the discord server.
+**/custom** | Enable/disable custom MVP respawn times (e.g. GTB respawn become 45 to 75 mins instead of 60 to 70 mins, Eddga become 105 to 135 instead of 120 to 130 mins, and so on).
+**/mobile** | Enable/disable track table mobile layout.
+**/settings** | Show current bot settings.
+**/clean** | Remove all tracked MVPs/mining locations from the table (useful after a server reboot).
+**/woe** | Display War of Emperium (WoE) times.
+**/gmc** | Display Game Master Challenge (GMC) times.
+**/hh** | Display Battleground Happy Hour times.
 
 ### MVP List:
 
