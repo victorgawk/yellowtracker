@@ -37,9 +37,8 @@ class OnReadyEvent:
         meta_sql = 'SELECT * FROM pg_catalog.pg_tables WHERE schemaname=\'public\' and tablename=\'mvp\''
         db_table_list = await conn.fetch(meta_sql)
         if len(db_table_list) == 0:
-            log.info(f"Creating initial database structure.")
-            sql_file = open('sql/yellowtracker.sql', 'r')
-            await conn.execute(sql_file.read())
+            log.error(f"Initial database structure not found.")
+            os._exit(42)
 
         log.info(f"Loading servers settings.")
         db_guild_list = await conn.fetch('SELECT * FROM guild')
