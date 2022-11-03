@@ -4,3 +4,6 @@ class Emoji(Enum):
 
     YES = '✅'
     NO = '❌'
+    HH = '⚔️'
+    WOE = '🏰'
+    GMC = '🐲'

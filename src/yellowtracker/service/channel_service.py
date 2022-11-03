@@ -141,7 +141,7 @@ class ChannelService:
                         maps.append(entry_state['entry']['map'])
                     remaining_times.append(remaining_time)
         if len(names) == 0:
-            embed.add_field(name=':x:', value='No ' + type.desc + ' has been tracked.', inline=False)
+            embed.add_field(name=':x:', value=f"{type.desc} list is empty", inline=False)
         else:
             max_length = 20
             if len(names) > max_length + 1:

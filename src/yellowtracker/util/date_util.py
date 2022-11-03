@@ -49,6 +49,10 @@ class DateUtil:
         return result.strip()
 
     @staticmethod
+    def get_local_tzinfo():
+        return datetime.now().astimezone().tzinfo
+
+    @staticmethod
     def fmt_dt(dt):
         return dt.strftime('%A %H:%M')
         #return dt.strftime('%Y-%m-%d %H:%M:%S %Z%z')

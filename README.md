@@ -17,7 +17,8 @@ BOT_USER_TOKEN=your discord bot token
 DATABASE_URL=your PostgresSQL URL with the syntax postgres://username:password@host:port/database
 DEL_MSG_AFTER_SECS=time to delete a message in a track channel after message last update (default = 10 seconds)
 TABLE_ENTRY_EXPIRATION_MINS=time to remove an entry from the track table after entry max respawn was reached (default = 20 minutes)
-TABLE_REFRESH_RATE_SECS=track table refresh rate (default = 5 seconds)
+TRACK_TIMER_DELAY_SECS=track timer delay in seconds (default = 5 seconds)
+EVENT_TIMER_DELAY_SECS=event timer delay in seconds (default = 5 seconds)
 TIMEZONE=timezone used for datetimes in HH:MM format (default = PST8PDT)
 GUILD_ID=a single server ID to sync the slash commands (default = None)
 ```

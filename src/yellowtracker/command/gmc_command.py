@@ -1,5 +1,6 @@
 import discord
 from yellowtracker.domain.bot import Bot
+from yellowtracker.domain.emoji import Emoji
 from yellowtracker.service.event_service import EventService
 from yellowtracker.util.date_util import DateUtil
 from yellowtracker.util.coroutine_util import CoroutineUtil
@@ -10,7 +11,7 @@ class GmcCommand:
     async def gmc(interaction: discord.Interaction, bot: Bot):
         gmc_map = EventService.get_gmc_map(bot)
         embed = discord.Embed()
-        embed.title = ':dragon_face: GMC'
+        embed.title = f"{Emoji.GMC.value} GMC"
         embed.colour = discord.Colour.gold()
         if gmc_map['ongoing'] != '':
             embed.add_field(name='Ongoing :boom:', value=gmc_map['ongoing'], inline=False)

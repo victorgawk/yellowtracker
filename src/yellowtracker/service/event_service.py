@@ -1,3 +1,4 @@
+import time
 from pytz import timezone
 from datetime import timedelta
 from yellowtracker.domain.bot import Bot
@@ -89,9 +90,9 @@ class EventService:
         return hh_map
 
     @staticmethod
-    def get_next_evt(bot: Bot) -> dict | None:
+    def get_next_evt(bot: Bot, type: str | None = None) -> dict | None:
         dt_now = DateUtil.get_dt_now(bot.TIMEZONE)
-        evts = EventService.get_evts(bot)
+        evts = EventService.get_evts(bot, type)
         next_evt = None
         for evt in evts:
             if evt['dt_end'] < dt_now:
@@ -100,24 +101,46 @@ class EventService:
                 next_evt = evt
             if evt['dt_begin'] <= dt_now <= evt['dt_end']: #ongoing
                 return next_evt
-                break
             if evt['dt_begin'] < next_evt['dt_begin']: #next
                 next_evt = evt
         return next_evt
 
     @staticmethod
+    def get_next_evts(bot: Bot) -> tuple[list[dict], list[dict]]:
+        dt_now = DateUtil.get_dt_now(bot.TIMEZONE)
+        woe = EventService.get_next_evt(bot, "woe")
+        hh = EventService.get_next_evt(bot, "hh")
+        gmc = EventService.get_next_evt(bot, "gmc")
+        ongoing = []
+        not_ongoing = []
+        for evt in [woe, hh, gmc]:
+            if evt is None:
+                continue
+            if evt['dt_begin'] <= dt_now <= evt['dt_end']:
+                ongoing.append(evt)
+            else:
+                not_ongoing.append(evt)
+        return ongoing, not_ongoing
+
+    @staticmethod
+    def is_ongoing(bot: Bot, evt: dict):
+        dt_now = DateUtil.get_dt_now(bot.TIMEZONE)
+        return evt['dt_begin'] <= dt_now <= evt['dt_end']
+
+    @staticmethod
     def format_evt(bot: Bot, evt: dict) -> str:
+        local_tz = DateUtil.get_local_tzinfo()
         dt_now = DateUtil.get_dt_now(bot.TIMEZONE)
         result = '**'
         result += evt['name']
         result += '** '
-        result += evt['dt_begin'].strftime('%H:%M')
+        result += f"<t:{int(time.mktime(evt['dt_begin'].astimezone(tz=local_tz).timetuple()))}:f>"
         if evt['dt_begin'] <= dt_now <= evt['dt_end']:
             result += ' (ends '
-            result += DateUtil.fmt_time((evt['dt_end'] - dt_now) / timedelta(milliseconds=1))
+            result += f"<t:{int(time.mktime(evt['dt_end'].astimezone(tz=local_tz).timetuple()))}:R>"
         else:
             result += ' ('
-            result += DateUtil.fmt_time((evt['dt_begin'] - dt_now) / timedelta(milliseconds=1))
+            result += f"<t:{int(time.mktime(evt['dt_begin'].astimezone(tz=local_tz).timetuple()))}:R>"
         result += ')'
         return result
 

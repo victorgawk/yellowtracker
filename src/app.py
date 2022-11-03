@@ -93,15 +93,8 @@ async def run_bot(bot: Bot) -> None:
         raise Exception("Bot token is missing")
     await bot.start(bot.BOT_USER_TOKEN)
 
-async def run_timers(bot: Bot) -> None:
-    log.info("Starting timers.")
-    while True:
-        await TrackTimer.timer(bot)
-        await EventTimer.timer(bot)
-        await asyncio.sleep(bot.TABLE_REFRESH_RATE_SECS)
-
 async def main():
-    return await asyncio.gather(run_bot(bot), run_timers(bot))
+    return await asyncio.gather(run_bot(bot), TrackTimer.timer(bot), EventTimer.timer(bot))
 
 loop = asyncio.new_event_loop()
 loop.create_task(main())

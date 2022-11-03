@@ -11,7 +11,8 @@ class Bot(discord.Client):
     DATABASE_URL = os.getenv("DATABASE_URL")
     DEL_MSG_AFTER_SECS = int(os.getenv("DEL_MSG_AFTER_SECS", default=10))
     TABLE_ENTRY_EXPIRATION_MINS = int(os.getenv("TABLE_ENTRY_EXPIRATION_MINS", default=20))
-    TABLE_REFRESH_RATE_SECS = int(os.getenv("TABLE_REFRESH_RATE_SECS", default=5))
+    TRACK_TIMER_DELAY_SECS = int(os.getenv("TRACK_TIMER_DELAY_SECS", default=5))
+    EVENT_TIMER_DELAY_SECS = int(os.getenv("EVENT_TIMER_DELAY_SECS", default=5))
     TIMEZONE = os.getenv("TIMEZONE", default="PST8PDT")
     GUILD_ID = os.getenv("GUILD_ID")
 
