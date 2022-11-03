@@ -2,6 +2,7 @@ import os
 import discord
 import asyncio
 import logging
+import tornado.web
 from yellowtracker.command.clean_command import CleanCommand
 from yellowtracker.command.custom_command import CustomCommand
 from yellowtracker.command.mobile_command import MobileCommand
@@ -93,8 +94,18 @@ async def run_bot(bot: Bot) -> None:
         raise Exception("Bot token is missing")
     await bot.start(bot.BOT_USER_TOKEN)
 
+async def health_check_http_server() -> None:
+    port = 8080
+    log.info(f"Starting health check HTTP server on port {port}.")
+    class MainHandler(tornado.web.RequestHandler):
+        def get(self):
+            self.write("It works")
+    app = tornado.web.Application([(r"/", MainHandler)])
+    app.listen(port)
+    await asyncio.Event().wait()
+
 async def main():
-    return await asyncio.gather(run_bot(bot), TrackTimer.timer(bot), EventTimer.timer(bot))
+    return await asyncio.gather(run_bot(bot), health_check_http_server(), TrackTimer.timer(bot), EventTimer.timer(bot))
 
 loop = asyncio.new_event_loop()
 loop.create_task(main())
