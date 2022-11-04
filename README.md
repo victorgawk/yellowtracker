@@ -13,14 +13,19 @@ Prerequisites to run this application:
 1. In the PostgreSQL database, use the content from the file `sql/yellowtracker.sql` to create the initial database structure.
 2. In the `src` folder, create a file named `.env` with the following variables:
 ```properties
+# REQUIRED (bot will raise an error if it's not defined)
+
 BOT_USER_TOKEN=your discord bot token
 DATABASE_URL=your PostgresSQL URL with the syntax postgres://username:password@host:port/database
+
+# OPTIONAL (bot will use the default value if it's not defined)
+
 DEL_MSG_AFTER_SECS=time to delete a message in a track channel after message last update (default = 10 seconds)
 TABLE_ENTRY_EXPIRATION_MINS=time to remove an entry from the track table after entry max respawn was reached (default = 20 minutes)
 TRACK_TIMER_DELAY_SECS=track timer delay in seconds (default = 5 seconds)
 EVENT_TIMER_DELAY_SECS=event timer delay in seconds (default = 5 seconds)
 TIMEZONE=timezone used for datetimes in HH:MM format (default = PST8PDT)
-GUILD_ID=a single server ID to sync the slash commands (default = None)
+GUILD_ID=a single server ID to sync the slash commands, if None it will sync to all servers that bot is a member (default = None)
 ```
 3. Inside a terminal/command prompt, go to the `src` folder.
 4. Execute the command `pip install -r requirements.txt` to install the application dependencies.
