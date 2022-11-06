@@ -1,12 +1,16 @@
+import discord
 import logging
 from yellowtracker.domain.bot import Bot
+from yellowtracker.util.coroutine_util import CoroutineUtil
 
 log = logging.getLogger(__name__)
 
 class OnGuildJoinEvent:
 
     @staticmethod
-    async def on_guild_join(guild, bot: Bot):
+    async def on_guild_join(guild, tree: discord.app_commands.CommandTree, bot: Bot):
+        tree.copy_global_to(guild=guild)
+        await CoroutineUtil.run(tree.sync(guild=guild))
         log.info(f"Joined to {guild.name}.")
         guild_state = {
             'id_guild': guild.id,

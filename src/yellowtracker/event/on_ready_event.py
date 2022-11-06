@@ -7,19 +7,22 @@ from yellowtracker.domain.bot import Bot
 from yellowtracker.domain.track_type import TrackType
 from yellowtracker.service.channel_service import ChannelService
 from yellowtracker.service.entry_service import EntryService
+from yellowtracker.util.coroutine_util import CoroutineUtil
 
 log = logging.getLogger(__name__)
 
 class OnReadyEvent:
 
     @staticmethod
-    async def on_ready(bot: Bot, tree: discord.app_commands.CommandTree, guild: discord.Object | None):
+    async def on_ready(bot: Bot, tree: discord.app_commands.CommandTree):
         log.info(f"Connected as {bot.user} on {len(bot.guilds)} servers.")
 
-        log.info(f"Syncing slash commands.")
-        if guild is not None:
-            tree.copy_global_to(guild=guild)
-        await tree.sync(guild=guild)
+        if bot.GUILD_ID is not None:
+            print(bot.GUILD_ID)
+            log.info(f"Syncing slash commands.")
+            guild_to_sync = discord.Object(id=int(bot.GUILD_ID))
+            tree.copy_global_to(guild=guild_to_sync)
+            await CoroutineUtil.run(tree.sync(guild=guild_to_sync))
 
         try:
             log.info(f"Creating database pool.")

@@ -1,11 +1,15 @@
+import logging
 import discord
+import time
 from yellowtracker.domain.bot import Bot
 from yellowtracker.util.coroutine_util import CoroutineUtil
+
+log = logging.getLogger(__name__)
 
 class OnMessageEvent:
 
     @staticmethod
-    async def on_message(bot: Bot, message: discord.Message):
+    async def on_message(bot: Bot, tree: discord.app_commands.CommandTree, message: discord.Message):
         if not OnMessageEvent.validate(bot, message):
             return
         args = message.content.split(" ", 1)
@@ -15,6 +19,8 @@ class OnMessageEvent:
             if (len(args)) < 2:
                 return
             await OnMessageEvent.notify(bot, message.channel, args[1])
+        if args[0] == "!sync":
+            await OnMessageEvent.sync(bot, tree, message.channel)
 
     @staticmethod
     async def guilds(bot: Bot, channel: discord.abc.Messageable):
@@ -48,6 +54,15 @@ class OnMessageEvent:
                 msg += "\n\n"
                 msg += user_msg
                 await CoroutineUtil.run(user.send(msg))
+
+    @staticmethod
+    async def sync(bot: Bot, tree: discord.app_commands.CommandTree, channel: discord.abc.Messageable):
+        ts = time.time()
+        log.info(f"Beginning sync of {len(bot.guilds)} guilds.")
+        for guild in bot.guilds:
+            tree.copy_global_to(guild=guild)
+            await CoroutineUtil.run(tree.sync(guild=guild))
+        await CoroutineUtil.run(channel.send(f"Slash commands synced with {len(bot.guilds)} guilds in {int(time.time() - ts)} secs."))
 
     @staticmethod
     async def send_guilds_partial_msg(bot: Bot, channel: discord.abc.Messageable, offset: int, count: int, guilds: str):

@@ -27,67 +27,66 @@ discord.utils.setup_logging()
 log = logging.getLogger(__name__)
 bot = Bot(intents=discord.Intents.default())
 tree = discord.app_commands.CommandTree(bot)
-guild = None if bot.GUILD_ID is None else discord.Object(id=int(bot.GUILD_ID))
 
-@tree.command(description = "Remove all tracked MVPs from the list", guild = guild)
+@tree.command(description = "Remove all tracked MVPs from the list")
 async def clean(interaction: discord.Interaction):
     await CleanCommand.clean(interaction = interaction, bot = bot)
 
-@tree.command(description = "Enable/disable custom MVP respawn times", guild = guild)
+@tree.command(description = "Enable/disable custom MVP respawn times")
 async def custom(interaction: discord.Interaction):
     await CustomCommand.custom(interaction = interaction, bot = bot)
 
-@tree.command(description = "Enable/disable MVP list mobile layout", guild = guild)
+@tree.command(description = "Enable/disable MVP list mobile layout")
 async def mobile(interaction: discord.Interaction):
     await MobileCommand.mobile(interaction = interaction, bot = bot)
 
-@tree.command(description = "Define a channel to track mining locations", guild = guild)
+@tree.command(description = "Define a channel to track mining locations")
 async def setminingchannel(interaction: discord.Interaction):
     await SetMiningChannelCommand.setminingchannel(interaction = interaction, bot = bot)
 
-@tree.command(description = "Define a channel to track MVPs", guild = guild)
+@tree.command(description = "Define a channel to track MVPs")
 async def setmvpchannel(interaction: discord.Interaction):
     await SetMvpChannelCommand.setmvpchannel(interaction = interaction, bot = bot)
 
-@tree.command(description = "Show bot settings", guild = guild)
+@tree.command(description = "Show bot settings")
 async def settings(interaction: discord.Interaction):
     await SettingsCommand.settings(interaction = interaction, bot = bot)
 
-@tree.command(description = "Track a MVP that has been defeated", guild = guild)
+@tree.command(description = "Track a MVP that has been defeated")
 async def track(interaction: discord.Interaction, mvp: str, time: str | None = None):
     await TrackCommand.track(interaction = interaction, bot = bot, mvp = mvp, entryTime = time)
 
-@tree.command(description = "Undo MVP track channel definition", guild = guild)
+@tree.command(description = "Undo MVP track channel definition")
 async def unsetminingchannel(interaction: discord.Interaction):
     await UnsetMiningChannelCommand.unsetminingchannel(interaction = interaction, bot = bot)
 
-@tree.command(description = "Undo MVP track channel definition", guild = guild)
+@tree.command(description = "Undo MVP track channel definition")
 async def unsetmvpchannel(interaction: discord.Interaction):
     await UnsetMvpChannelCommand.unsetmvpchannel(interaction = interaction, bot = bot)
 
-@tree.command(description = "Show War of Emperium times", guild = guild)
+@tree.command(description = "Show War of Emperium times")
 async def woe(interaction: discord.Interaction):
     await WoeCommand.woe(interaction = interaction, bot = bot)
 
-@tree.command(description = "Show GM Challenge times", guild = guild)
+@tree.command(description = "Show GM Challenge times")
 async def gmc(interaction: discord.Interaction):
     await GmcCommand.gmc(interaction = interaction, bot = bot)
 
-@tree.command(description = "Show BG Happy Hour times", guild = guild)
+@tree.command(description = "Show BG Happy Hour times")
 async def hh(interaction: discord.Interaction):
     await HhCommand.hh(interaction = interaction, bot = bot)
 
 @bot.event
 async def on_ready():
-    await OnReadyEvent.on_ready(bot = bot, tree = tree, guild = guild)
+    await OnReadyEvent.on_ready(bot = bot, tree = tree)
 
 @bot.event
 async def on_message(message):
-    await OnMessageEvent.on_message(message = message, bot = bot)
+    await OnMessageEvent.on_message(message = message, tree = tree, bot = bot)
 
 @bot.event
 async def on_guild_join(guild):
-    await OnGuildJoinEvent.on_guild_join(guild = guild, bot = bot)
+    await OnGuildJoinEvent.on_guild_join(guild = guild, tree = tree, bot = bot)
 
 @bot.event
 async def on_guild_remove(guild):
