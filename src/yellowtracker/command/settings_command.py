@@ -3,6 +3,7 @@ from yellowtracker.domain.bot import Bot
 from yellowtracker.domain.emoji import Emoji
 from yellowtracker.domain.track_type import TrackType
 from yellowtracker.service.channel_service import ChannelService
+from yellowtracker.util.coroutine_util import CoroutineUtil
 
 class SettingsCommand:
 
@@ -24,4 +25,4 @@ class SettingsCommand:
         msg += f"Mobile Layout: {Emoji.YES.value if guild_state['mobile'] else Emoji.NO.value}\n"
         msg += f"MVP Channel: {'' if mvp_channel is None else mvp_channel.mention}\n"
         msg += f"Mining Channel: {'' if mining_channel is None else mining_channel.mention}"
-        await interaction.response.send_message(msg)
+        await CoroutineUtil.run(interaction.response.send_message(msg))

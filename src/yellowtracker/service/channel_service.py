@@ -1,3 +1,4 @@
+import logging
 import discord
 import collections
 from datetime import datetime, timedelta
@@ -6,6 +7,8 @@ from yellowtracker.domain.track_type import TrackType
 from yellowtracker.util.date_util import DateUtil
 from yellowtracker.util.coroutine_util import CoroutineUtil
 from yellowtracker.util.track_util import TrackUtil
+
+log = logging.getLogger(__name__)
 
 class ChannelService:
 
@@ -32,7 +35,7 @@ class ChannelService:
         if ChannelService.validate_channel(bot, channel) is not None:
             return
         channel_state['id_message'] = None
-        msgs = [message async for message in channel.history(oldest_first=True)]
+        msgs = await CoroutineUtil.run(ChannelService.get_channel_history(channel))
         if msgs is None:
             return
         msgs_to_delete = []
@@ -45,7 +48,11 @@ class ChannelService:
         await CoroutineUtil.run(channel.delete_messages(msgs_to_delete))
 
     @staticmethod
-    async def set_channel(bot, channel, type: TrackType):
+    async def get_channel_history(channel):
+        return [message async for message in channel.history(oldest_first=True)]
+
+    @staticmethod
+    async def set_channel(bot: Bot, channel, type: TrackType):
         guild_state = bot.guild_state_map[channel.guild.id]
         channel_state_map = guild_state['channel_state_map']
         channel_state = next(
@@ -83,7 +90,7 @@ class ChannelService:
     async def unset_channel(interaction: discord.Interaction, bot: Bot, trackType: TrackType):
         validate_msg = ChannelService.validate_channel(bot, interaction.channel)
         if validate_msg is not None:
-            await interaction.response.send_message(validate_msg)
+            await CoroutineUtil.run(interaction.response.send_message(validate_msg))
             return
         guild_state = bot.guild_state_map[interaction.guild_id]
         channel_state_map = guild_state['channel_state_map']
@@ -96,7 +103,7 @@ class ChannelService:
             None
         )
         if channel_state is None:
-            await interaction.response.send_message('There is no ' + trackType.desc + ' channel set.')
+            await CoroutineUtil.run(interaction.response.send_message('There is no ' + trackType.desc + ' channel set.'))
             return
         del channel_state_map[channel_state['id_channel']]
         conn = await bot.pool_acquire()
@@ -107,58 +114,58 @@ class ChannelService:
             await conn.execute(sql, interaction.guild_id)
         finally:
             await bot.pool_release(conn)
-        await interaction.response.send_message(trackType.desc + ' channel unset.')
+        await CoroutineUtil.run(interaction.response.send_message(trackType.desc + ' channel unset.'))
 
     @staticmethod
     async def update_channel_message(bot: Bot, channel_state: dict):
         mobile = bot.guild_state_map[channel_state['id_guild']]['mobile']
-        type = channel_state['type']
+        track_type = channel_state['type']
         embed = discord.Embed()
         embed.colour = discord.Colour.gold()
-        embed.title = (':crown: ' if type == TrackType.MVP else ':pick: ') + type.desc + 'S'
+        embed.title = (':crown: ' if track_type == TrackType.MVP else ':pick: ') + track_type.desc + 'S'
         names = []
         maps = []
         remaining_times = []
         id_mob_first_entry = None
-        cmp = 'r2' if type == TrackType.MVP else 'r1'
+        cmp = 'r2' if track_type == TrackType.MVP else 'r1'
         for entry_state in channel_state['entry_state_list']:
             if entry_state[cmp] > -bot.TABLE_ENTRY_EXPIRATION_MINS:
                 remaining_time = TrackUtil.fmt_r1_r2(int(entry_state['r1']))
-                if type == TrackType.MVP:
+                if track_type == TrackType.MVP:
                     if id_mob_first_entry is None:
                         id_mob_first_entry = entry_state['entry']['id_mob']
                     remaining_time += ' to ' + TrackUtil.fmt_r1_r2(int(entry_state['r2']))
                 remaining_time += ' mins'
                 if mobile:
                     name = entry_state['entry']['name']
-                    if type == TrackType.MVP:
+                    if track_type == TrackType.MVP:
                         name += ' (' + entry_state['entry']['map'] + ')'
                     name += ' | ' + remaining_time
                     names.append(name)
                 else:
                     names.append(entry_state['entry']['name'])
-                    if type == TrackType.MVP:
+                    if track_type == TrackType.MVP:
                         maps.append(entry_state['entry']['map'])
                     remaining_times.append(remaining_time)
         if len(names) == 0:
-            embed.add_field(name=':x:', value=f"{type.desc} list is empty", inline=False)
+            embed.add_field(name=':x:', value=f"{track_type.desc} list is empty", inline=False)
         else:
             max_length = 20
             if len(names) > max_length + 1:
                 diff = len(names) - max_length
                 for i in range(0, diff):
                     names.pop()
-                    if type == TrackType.MVP:
+                    if track_type == TrackType.MVP:
                         maps.pop()
                     remaining_times.pop()
                 names.append('and ' + str(diff) + ' more...')
-            if type == TrackType.MVP:
+            if track_type == TrackType.MVP:
                 embed.set_thumbnail(url="https://file5s.ratemyserver.net/mobs/" + str(id_mob_first_entry) + ".gif")
             if mobile:
                 embed.add_field(name='Name', value=TrackUtil.fmt_column(names), inline=False)
             else:
                 embed.add_field(name='Name', value=TrackUtil.fmt_column(names), inline=True)
-                if type == TrackType.MVP:
+                if track_type == TrackType.MVP:
                     embed.add_field(name='Map', value=TrackUtil.fmt_column(maps), inline=True)
                 embed.add_field(name='Remaining Time', value=TrackUtil.fmt_column(remaining_times), inline=True)
         if len(channel_state['entry_log_list']) > 0:
@@ -169,7 +176,7 @@ class ChannelService:
                 milliseconds = (entry_log['entry_time'] - datetime.now()) / timedelta(milliseconds=1)
                 result += '**[' + DateUtil.fmt_time_short(milliseconds) + ']**'
                 result += ' ' + entry_log['entry']['name']
-                if type == TrackType.MVP:
+                if track_type == TrackType.MVP:
                     result += ' (' + entry_log['entry']['map'] + ')'
                 result += ' by <@' + str(entry_log['id_user']) + '>'
             embed.add_field(name='Track Log', value=result, inline=False)
@@ -183,7 +190,13 @@ class ChannelService:
             return
         message = None
         if channel_state['id_message'] is not None:
-            message = await CoroutineUtil.run_with_retries(channel.fetch_message(channel_state['id_message']))
+            try:
+                message = await channel.fetch_message(channel_state['id_message'])
+            except discord.errors.NotFound:
+                pass
+            except:
+                log.error(f"Unexpected error.\n{CoroutineUtil.get_stack_str()}", exc_info=True)
+                return
         if message is None:
             message = await CoroutineUtil.run(channel.send(embed=embed))
             if message is not None:
@@ -222,12 +235,12 @@ class ChannelService:
     async def confirm_set_channel(interaction: discord.Interaction, bot: Bot, trackType: TrackType):
         validate_msg = ChannelService.validate_channel(bot, interaction.channel)
         if validate_msg is not None:
-            await interaction.response.send_message(validate_msg)
+            await CoroutineUtil.run(interaction.response.send_message(validate_msg))
             return
-        await interaction.response.send_message(
+        await CoroutineUtil.run(interaction.response.send_message(
             "This will remove all messages from this channel. Are you sure?",
             view=SetChannelView(bot = bot, trackType = trackType)
-        )
+        ))
 
 class SetChannelView(discord.ui.View):
     def __init__(self, *, timeout = 180, bot, trackType):
@@ -241,11 +254,11 @@ class SetChannelYesButton(discord.ui.Button):
         self.trackType = trackType
         super().__init__(style=discord.ButtonStyle.primary, label='Yes')
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.edit_message(view=None)
+        await CoroutineUtil.run(interaction.response.edit_message(view=None))
         await ChannelService.set_channel(self.bot, interaction.channel, self.trackType)
 
 class SetChannelNoButton(discord.ui.Button):
     def __init__(self):
         super().__init__(style=discord.ButtonStyle.secondary, label='No')
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.edit_message(view=None)
+        await CoroutineUtil.run(interaction.response.edit_message(view=None))

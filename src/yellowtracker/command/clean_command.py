@@ -19,10 +19,10 @@ class CleanCommand:
             await CoroutineUtil.run(interaction.response.send_message('This command can only be used in a track channel.'))
             return
 
-        await interaction.response.send_message(
+        await CoroutineUtil.run(interaction.response.send_message(
             "This will clean the list. Are you sure?",
             view=CleanView(bot = bot, trackType = channel_state['type'])
-        )
+        ))
 
 class CleanView(discord.ui.View):
     def __init__(self, *, timeout = 180, bot, trackType):
@@ -41,7 +41,7 @@ class CleanYesButton(discord.ui.Button):
         try:
             guild_state = bot.guild_state_map.get(interaction.guild_id)
             if guild_state is None:
-                await interaction.response.defer()
+                await CoroutineUtil.run(interaction.response.defer())
                 return
             channel_state = guild_state['channel_state_map'].get(interaction.channel_id)
             for entry_state in channel_state['entry_state_list']:
@@ -59,10 +59,10 @@ class CleanYesButton(discord.ui.Button):
             await bot.pool_release(conn)
         channel_state['entry_state_list'].clear()
         await ChannelService.update_channel_message(bot, channel_state)
-        await interaction.response.edit_message(content='Track list cleared.', view=None)
+        await CoroutineUtil.run(interaction.response.edit_message(content='Track list cleared.', view=None))
 
 class CleanNoButton(discord.ui.Button):
     def __init__(self):
         super().__init__(style=discord.ButtonStyle.secondary, label='No')
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.edit_message(view=None)
+        await CoroutineUtil.run(interaction.response.edit_message(view=None))

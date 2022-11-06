@@ -1,5 +1,6 @@
 import discord
 from yellowtracker.domain.bot import Bot
+from yellowtracker.util.coroutine_util import CoroutineUtil
 
 class CustomCommand:
 
@@ -16,4 +17,4 @@ class CustomCommand:
             await bot.pool_release(conn)
         msg = 'Custom MVP respawn times '
         msg += 'enabled.' if custom else 'disabled.'
-        await interaction.response.send_message(msg)
+        await CoroutineUtil.run(interaction.response.send_message(msg))

@@ -1,4 +1,7 @@
-import asyncio
+import logging
+import traceback
+
+log = logging.getLogger(__name__)
 
 class CoroutineUtil:
 
@@ -6,16 +9,13 @@ class CoroutineUtil:
     async def run(coroutine):
         try:
             return await coroutine
-        except:
-            pass
+        except BaseException:
+            log.error(f"Unexpected error.\n{CoroutineUtil.get_stack_str()}", exc_info=True)
 
     @staticmethod
-    async def run_with_retries(coroutine):
-        curr = 0
-        max = 3
-        while curr < max:
-            try:
-                return await coroutine
-            except:
-                curr += 1
-                await asyncio.sleep(curr)
+    def get_stack_str():
+        stack_str = ""
+        stack = traceback.format_stack()
+        for e in stack:
+            stack_str += e
+        return stack_str

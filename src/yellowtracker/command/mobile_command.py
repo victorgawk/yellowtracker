@@ -1,6 +1,7 @@
 import discord
 from yellowtracker.domain.bot import Bot
 from yellowtracker.service.channel_service import ChannelService
+from yellowtracker.util.coroutine_util import CoroutineUtil
 
 class MobileCommand:
 
@@ -18,5 +19,5 @@ class MobileCommand:
         msg = 'MVP list mobile layout '
         msg += 'enabled.' if mobile else 'disabled.'
         channel_state = guild_state['channel_state_map'].get(interaction.channel_id)
-        await interaction.response.send_message(msg)
+        await CoroutineUtil.run(interaction.response.send_message(msg))
         await ChannelService.update_channel_message(bot, channel_state)

@@ -2,6 +2,7 @@ from datetime import timedelta
 import discord
 from yellowtracker.domain.bot import Bot
 from yellowtracker.domain.track_type import TrackType
+from yellowtracker.util.coroutine_util import CoroutineUtil
 from yellowtracker.util.date_util import DateUtil
 from yellowtracker.service.track_service import TrackService
 from yellowtracker.service.channel_service import ChannelService
@@ -13,12 +14,12 @@ class TrackCommand:
     async def track(interaction: discord.Interaction, bot: Bot, mvp: str, entryTime: str | None):
         validate_msg = ChannelService.validate_channel(bot, interaction.channel)
         if validate_msg is not None:
-            await interaction.response.send_message(validate_msg)
+            await CoroutineUtil.run(interaction.response.send_message(validate_msg))
             return
         guild_state = bot.guild_state_map[interaction.guild_id]
         channel_state = guild_state['channel_state_map'].get(interaction.channel_id)
         if channel_state is None:
-            await interaction.response.send_message('This command can only be used in a track channel.')
+            await CoroutineUtil.run(interaction.response.send_message('This command can only be used in a track channel.'))
             return
 
         mins_ago = 0
@@ -43,14 +44,14 @@ class TrackCommand:
         results = EntryService.find_entry(bot, mvp, type)
 
         if len(results) == 0:
-            await interaction.response.send_message(
+            await CoroutineUtil.run(interaction.response.send_message(
                 type.desc + ' "' + mvp + '" not found.'
-            )
+            ))
         elif len(results) == 1:
             bot_reply_msg = await TrackService.update_track_time(bot, channel_state, results[0], mins_ago, interaction.user.id)
-            await interaction.response.send_message(
+            await CoroutineUtil.run(interaction.response.send_message(
                 bot_reply_msg
-            )
+            ))
         else:
             bot_reply_msg = 'More than one ' + type.desc
             bot_reply_msg += ' starting with "' + mvp + '" has been found.\n'
@@ -60,10 +61,10 @@ class TrackCommand:
             if entryTime is not None:
                 bot_reply_msg += ' with time ' + entryTime
             bot_reply_msg += ':'
-            await interaction.response.send_message(
+            await CoroutineUtil.run(interaction.response.send_message(
                 bot_reply_msg,
                 view=TrackView(bot = bot, opts = results, mins_ago = mins_ago, track_type = type)
-            )
+            ))
 
 class TrackView(discord.ui.View):
     def __init__(self, *, timeout = 180, bot, opts, mins_ago, track_type):
@@ -90,4 +91,4 @@ class TrackSelect(discord.ui.Select):
             return
         channel_state = guild_state['channel_state_map'].get(interaction.channel_id)
         bot_reply_msg = await TrackService.update_track_time(self.bot, channel_state, entry, self.mins_ago, interaction.user.id)
-        await interaction.response.edit_message(content=bot_reply_msg, view=None)
+        await CoroutineUtil.run(interaction.response.edit_message(content=bot_reply_msg, view=None))
