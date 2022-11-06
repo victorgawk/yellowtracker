@@ -18,6 +18,7 @@ from yellowtracker.command.gmc_command import GmcCommand
 from yellowtracker.domain.bot import Bot
 from yellowtracker.event.on_guild_join_event import OnGuildJoinEvent
 from yellowtracker.event.on_guild_remove_event import OnGuildRemoveEvent
+from yellowtracker.event.on_message_event import OnMessageEvent
 from yellowtracker.event.on_ready_event import OnReadyEvent
 from yellowtracker.timer.event_timer import EventTimer
 from yellowtracker.timer.track_timer import TrackTimer
@@ -79,6 +80,10 @@ async def hh(interaction: discord.Interaction):
 @bot.event
 async def on_ready():
     await OnReadyEvent.on_ready(bot = bot, tree = tree, guild = guild)
+
+@bot.event
+async def on_message(message):
+    await OnMessageEvent.on_message(message = message, bot = bot)
 
 @bot.event
 async def on_guild_join(guild):

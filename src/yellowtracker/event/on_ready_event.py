@@ -17,6 +17,8 @@ class OnReadyEvent:
         log.info(f"Connected as {bot.user} on {len(bot.guilds)} servers.")
 
         log.info(f"Syncing slash commands.")
+        if guild is not None:
+            tree.copy_global_to(guild=guild)
         await tree.sync(guild=guild)
 
         try:
