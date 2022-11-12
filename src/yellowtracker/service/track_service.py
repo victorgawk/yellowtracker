@@ -10,29 +10,39 @@ class TrackService:
     async def update_track_time(bot: Bot, channel_state: dict, entry, mins_ago: int, user_time: str | None, id_user: int):
         conn = await bot.pool_acquire()
         type = channel_state['type']
-        entry_time = datetime.now()
-        track_time = entry_time - timedelta(minutes=mins_ago)
+        date = datetime.now()
+        track_time = date - timedelta(minutes=mins_ago)
         try:
             read_sql = f"SELECT * FROM {type.sql_desc}_guild WHERE id_{type.sql_desc}=$1 AND id_guild=$2"
             entry_guild_db = await conn.fetch(read_sql, entry['id'], channel_state['id_guild'])
-            write_sql = f"INSERT INTO {type.sql_desc}_guild(id_{type.sql_desc},id_guild,track_time,entry_time,id_user)VALUES($1,$2,$3,$4,$5)"
+            write_sql = f"INSERT INTO {type.sql_desc}_guild(id_{type.sql_desc},id_guild,track_time)VALUES($1,$2,$3)"
             if len(entry_guild_db) > 0:
-                write_sql = f"UPDATE {type.sql_desc}_guild SET track_time=$3,entry_time=$4,id_user=$5 WHERE id_{type.sql_desc}=$1 AND id_guild=$2"
-            await conn.execute(write_sql, entry['id'], channel_state['id_guild'], track_time, entry_time, id_user)
+                write_sql = f"UPDATE {type.sql_desc}_guild SET track_time=$3 WHERE id_{type.sql_desc}=$1 AND id_guild=$2"
+            await conn.execute(write_sql, entry['id'], channel_state['id_guild'], track_time)
+
+            read_sql = f"SELECT * FROM {type.sql_desc}_guild_log WHERE id_{type.sql_desc}=$1 AND id_guild=$2"
+            entry_guild_log_db = await conn.fetch(read_sql, entry['id'], channel_state['id_guild'])
+            write_sql = f"INSERT INTO {type.sql_desc}_guild_log(id_{type.sql_desc},id_guild,date,id_user)VALUES($1,$2,$3,$4)"
+            if len(entry_guild_log_db) > 0:
+                write_sql = f"UPDATE {type.sql_desc}_guild_log SET date=$3,id_user=$4 WHERE id_{type.sql_desc}=$1 AND id_guild=$2"
+            await conn.execute(write_sql, entry['id'], channel_state['id_guild'], date, id_user)
+
             entry_log = None
-            for _entry_log in channel_state['entry_log_list']:
-                if _entry_log['entry'] == entry:
-                    entry_log = _entry_log
+            for x in channel_state['entry_log_list']:
+                if x['entry'] == entry:
+                    entry_log = x
                     break
             if entry_log is not None:
                 channel_state['entry_log_list'].remove(entry_log)
             channel_state['entry_log_list'].appendleft({
                 'entry': entry,
-                'entry_time': entry_time,
+                'date': date,
                 'id_user': id_user
             })
-            if len(channel_state['entry_log_list']) > 3:
-                channel_state['entry_log_list'].pop()
+            while len(channel_state['entry_log_list']) > 3:
+                entry_log_to_remove = channel_state['entry_log_list'].pop()
+                del_sql = f"DELETE FROM {type.sql_desc}_guild_log WHERE id_{type.sql_desc}=$1 AND id_guild=$2"
+                await conn.execute(del_sql, entry_log_to_remove['entry']['id'], channel_state['id_guild'])
         finally:
             await bot.pool_release(conn)
         entry_state = await TrackUtil.track_entry(bot, channel_state, entry, track_time)

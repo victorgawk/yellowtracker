@@ -1,10 +1,11 @@
 /*
+DROP TABLE IF EXISTS mining_guild_log;
 DROP TABLE IF EXISTS mining_guild;
 DROP TABLE IF EXISTS mining;
+DROP TABLE IF EXISTS mvp_guild_log;
 DROP TABLE IF EXISTS mvp_guild;
 DROP TABLE IF EXISTS mvp_alias;
 DROP TABLE IF EXISTS mvp;
-DROP TABLE IF EXISTS channel_guild;
 DROP TABLE IF EXISTS guild;
 DROP TABLE IF EXISTS global_parameter;
 DROP SEQUENCE IF EXISTS mvp_seq;
@@ -58,8 +59,6 @@ CREATE TABLE mvp_guild (
     id_mvp integer NOT NULL,
     id_guild bigint NOT NULL,
     track_time timestamp without time zone NOT NULL,
-    entry_time timestamp without time zone NOT NULL,
-    id_user bigint NOT NULL,
     CONSTRAINT mvp_guild_pk PRIMARY KEY (id_mvp, id_guild)
 );
 
@@ -67,9 +66,23 @@ CREATE TABLE mining_guild (
     id_mining integer NOT NULL,
     id_guild bigint NOT NULL,
     track_time timestamp without time zone NOT NULL,
-    entry_time timestamp without time zone NOT NULL,
-    id_user bigint NOT NULL,
     CONSTRAINT mining_guild_pk PRIMARY KEY (id_mining, id_guild)
+);
+
+CREATE TABLE mvp_guild_log (
+    id_mvp integer NOT NULL,
+    id_guild bigint NOT NULL,
+    id_user bigint NOT NULL,
+    date timestamp without time zone NOT NULL,
+    CONSTRAINT mvp_guild_log_pk PRIMARY KEY (id_mvp, id_guild)
+);
+
+CREATE TABLE mining_guild_log (
+    id_mining integer NOT NULL,
+    id_guild bigint NOT NULL,
+    id_user bigint NOT NULL,
+    date timestamp without time zone NOT NULL,
+    CONSTRAINT mining_guild_log_pk PRIMARY KEY (id_mining, id_guild)
 );
 
 INSERT INTO global_parameter(id)VALUES(1);

@@ -147,6 +147,8 @@ class ChannelService:
         id_mob_first_entry = None
         cmp = 'r2' if track_type == TrackType.MVP else 'r1'
 
+        active_entry_states = []
+        inactive_entry_state_ids = []
         for entry_state in channel_state['entry_state_list']:
             if entry_state[cmp] > -bot.TABLE_ENTRY_EXPIRATION_MINS:
                 remaining_time = TrackUtil.fmt_r1_r2(int(entry_state['r1']))
@@ -166,6 +168,18 @@ class ChannelService:
                     if track_type == TrackType.MVP:
                         maps.append(entry_state['entry']['map'])
                     remaining_times.append(remaining_time)
+                active_entry_states.append(entry_state)
+            else:
+                inactive_entry_state_ids.append((entry_state['entry']['id'], channel_state['id_guild']))
+
+        channel_state['entry_state_list'] = active_entry_states
+
+        conn = await bot.pool_acquire()
+        try:
+            del_entry_state_sql = f"DELETE FROM {track_type.sql_desc}_guild WHERE id_{track_type.sql_desc}=$1 AND id_guild=$2"
+            await conn.executemany(del_entry_state_sql, inactive_entry_state_ids)
+        finally:
+            await bot.pool_release(conn)
 
         if len(names) == 0:
             embed.add_field(name=':x:', value=f"{track_type.desc} list is empty", inline=False)
@@ -193,7 +207,7 @@ class ChannelService:
             for entry_log in channel_state['entry_log_list']:
                 if result != '':
                     result += '\n'
-                result += f"[<t:{int(time.mktime(entry_log['entry_time'].astimezone(tz=local_tz).timetuple()))}:R>]"
+                result += f"[<t:{int(time.mktime(entry_log['date'].astimezone(tz=local_tz).timetuple()))}:R>]"
                 result += ' ' + entry_log['entry']['name']
                 if track_type == TrackType.MVP:
                     result += ' (' + entry_log['entry']['map'] + ')'

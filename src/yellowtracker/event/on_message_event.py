@@ -75,13 +75,7 @@ class OnMessageEvent:
                 channel_state = guild_state['channel_state_map'].get(id_channel)
                 if channel_state is None:
                     continue
-                track_type = channel_state['type']
-                cmp = 'r2' if track_type == TrackType.MVP else 'r1'
-                active_entries_num = 0
-                for entry_state in channel_state['entry_state_list']:
-                    if entry_state[cmp] > -bot.TABLE_ENTRY_EXPIRATION_MINS:
-                        active_entries_num += 1
-                if active_entries_num > 0:
+                if len(channel_state['entry_state_list']) > 0:
                     owner = None
                     if guild.owner_id is not None:
                         owner = await CoroutineUtil.run(guild.fetch_member(guild.owner_id))
@@ -91,12 +85,12 @@ class OnMessageEvent:
                     if channel is None:
                         continue
                     line = f"{channel} | "
-                    line += f"{track_type.sql_desc} | "
+                    line += f"{channel_state['type'].sql_desc} | "
                     line += f"{guild} | "
                     line += f"{owner} | "
                     line += f"{'Yes' if guild_state['custom'] else 'No'} | "
                     line += f"{'Yes' if guild_state['mobile'] else 'No'} | "
-                    line += f"{active_entries_num}"
+                    line += f"{len(channel_state['entry_state_list'])}"
                     lines.append(line)
         title = "Channels"
         header = "Channel | Type | Guild | Owner | Custom | Mobile | Entries"

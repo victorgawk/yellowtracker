@@ -33,7 +33,7 @@ class EntryService:
 
     @staticmethod
     async def load_db_entries_log(bot: Bot, conn, type):
-        sql = 'SELECT * FROM ' + type.sql_desc + '_guild ORDER BY entry_time DESC'
+        sql = 'SELECT * FROM ' + type.sql_desc + '_guild_log ORDER BY date DESC'
         db_entry_log_list = await conn.fetch(sql)
         entry_list = bot.mvp_list if type == TrackType.MVP else bot.mining_list
         for db_entry_log in db_entry_log_list:
@@ -58,7 +58,7 @@ class EntryService:
             if len(channel_state['entry_log_list']) < 3:
                 channel_state['entry_log_list'].append({
                     'entry': entry,
-                    'entry_time': db_entry_log['entry_time'],
+                    'date': db_entry_log['date'],
                     'id_user': db_entry_log['id_user']
                 })
             else:

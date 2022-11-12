@@ -37,27 +37,17 @@ class CleanYesButton(discord.ui.Button):
         super().__init__(style=discord.ButtonStyle.primary, label='Yes')
     async def callback(self, interaction: discord.Interaction):
         bot = self.bot
-        conn = await bot.pool_acquire()
-        try:
-            guild_state = bot.guild_state_map.get(interaction.guild_id)
-            if guild_state is None:
-                await CoroutineUtil.run(interaction.response.defer())
-                return
-            channel_state = guild_state['channel_state_map'].get(interaction.channel_id)
-            for entry_state in channel_state['entry_state_list']:
-                mins_ago = entry_state['t2' if self.trackType == TrackType.MVP else 't1']
-                mins_ago += bot.TABLE_ENTRY_EXPIRATION_MINS
-                entry_state['r1'] = -mins_ago
-                if self.trackType == TrackType.MVP:
-                    entry_state['r2'] = -mins_ago
-                track_time = datetime.now() - timedelta(minutes=mins_ago)
-                sql  = 'UPDATE ' + self.trackType.sql_desc + '_guild '
-                sql += 'SET track_time=$3 '
-                sql += 'WHERE id_guild=$1 AND id_' + self.trackType.sql_desc + '=$2'
-                await conn.execute(sql, channel_state['id_guild'], entry_state['entry']['id'], track_time)
-        finally:
-            await bot.pool_release(conn)
-        channel_state['entry_state_list'].clear()
+        guild_state = bot.guild_state_map.get(interaction.guild_id)
+        if guild_state is None:
+            await CoroutineUtil.run(interaction.response.defer())
+            return
+        channel_state = guild_state['channel_state_map'].get(interaction.channel_id)
+        for entry_state in channel_state['entry_state_list']:
+            mins_ago = entry_state['t2' if self.trackType == TrackType.MVP else 't1']
+            mins_ago += bot.TABLE_ENTRY_EXPIRATION_MINS
+            entry_state['r1'] = -mins_ago
+            if self.trackType == TrackType.MVP:
+                entry_state['r2'] = -mins_ago
         await ChannelService.update_channel_message(bot, channel_state)
         await CoroutineUtil.run(interaction.response.edit_message(content='Track list cleared.', view=None))
 
