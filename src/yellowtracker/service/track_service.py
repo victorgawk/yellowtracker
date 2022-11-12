@@ -7,7 +7,7 @@ from yellowtracker.util.track_util import TrackUtil
 class TrackService:
 
     @staticmethod
-    async def update_track_time(bot: Bot, channel_state: dict, entry, mins_ago: int, id_user: int):
+    async def update_track_time(bot: Bot, channel_state: dict, entry, mins_ago: int, user_time: str | None, id_user: int):
         conn = await bot.pool_acquire()
         type = channel_state['type']
         entry_time = datetime.now()
@@ -47,6 +47,9 @@ class TrackService:
         if type == TrackType.MVP:
             msg += ' to '
             msg += TrackUtil.fmt_r1_r2(int(entry_state['r2']))
-        msg += ' minutes.'
+        msg += ' minutes'
+        if user_time is not None:
+            msg += ' (time: ' + user_time + ')'
+        msg += '.'
         return msg
 

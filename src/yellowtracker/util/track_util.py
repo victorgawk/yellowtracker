@@ -33,7 +33,7 @@ class TrackUtil:
             entry_state['r2'] = entry_state['t2'] - mins_ago
 
     @staticmethod
-    def fmt_r1_r2(val):
+    def fmt_r1_r2(val: int):
         return str(val) if val > 0 else '**' + str(val) + '**'
 
     @staticmethod

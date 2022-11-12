@@ -19,16 +19,16 @@ class OnReadyEvent:
 
         if bot.GUILD_ID is not None:
             print(bot.GUILD_ID)
-            log.info(f"Syncing slash commands.")
+            log.info(f"Sync slash commands with one guild.")
             guild_to_sync = discord.Object(id=int(bot.GUILD_ID))
             tree.copy_global_to(guild=guild_to_sync)
             await CoroutineUtil.run(tree.sync(guild=guild_to_sync))
 
         try:
-            log.info(f"Creating database pool.")
+            log.info(f"Create database pool.")
             bot.pool = await asyncpg.create_pool(dsn=bot.DATABASE_URL)
         except Exception as e:
-            log.error(f"Error trying to create database pool: {e}")
+            log.error(f"Error on database pool creation: {e}")
             os._exit(42)
 
         conn: asyncpg.connection.Connection = await bot.pool_acquire()
@@ -36,6 +36,8 @@ class OnReadyEvent:
             await OnReadyEvent.load_database(bot, conn)
         finally:
             await bot.pool_release(conn)
+
+        bot.tracker_ready = True
 
     @staticmethod
     async def load_database(bot: Bot, conn: asyncpg.connection.Connection):
@@ -45,7 +47,7 @@ class OnReadyEvent:
             log.error(f"Initial database structure not found.")
             os._exit(42)
 
-        log.info(f"Loading servers settings.")
+        log.info(f"Load servers settings.")
         db_guild_list = await conn.fetch('SELECT * FROM guild')
         for db_guild in db_guild_list:
             if ChannelService.get_guild_from_bot(bot, db_guild['id']) is None:
@@ -92,7 +94,7 @@ class OnReadyEvent:
                     channel_state['entry_log_list'] = collections.deque()
                     guild_state['channel_state_map'][guild_state['id_mining_channel']] = channel_state
 
-        log.info("Loading MVPs.")
+        log.info("Load MVPs.")
         bot.mvp_list = []
         db_mvp_list = await conn.fetch('SELECT * FROM mvp')
         for db_mvp in db_mvp_list:
@@ -104,7 +106,7 @@ class OnReadyEvent:
             mvp = next(x for x in bot.mvp_list if x['id'] == db_mvp_alias['id_mvp'])
             mvp['alias'].append(db_mvp_alias['alias'])
 
-        log.info("Loading mining locations.")
+        log.info("Load mining locations.")
         bot.mining_list = []
         db_mining_list = await conn.fetch('SELECT * FROM mining')
         for db_mining in db_mining_list:
@@ -113,13 +115,13 @@ class OnReadyEvent:
             mining_dict['alias'] = []
             bot.mining_list.append(mining_dict)
 
-        log.info("Loading MVP entries.")
+        log.info("Load MVP entries.")
         await EntryService.load_db_entries(bot, conn, TrackType.MVP)
 
-        log.info("Loading mining location entries.")
+        log.info("Load mining location entries.")
         await EntryService.load_db_entries(bot, conn, TrackType.MINING)
 
-        log.info("Initializing track channels.")
+        log.info("Init track channels.")
         for id_guild in bot.guild_state_map:
             guild_state = bot.guild_state_map[id_guild]
             guild = ChannelService.get_guild_from_bot(bot, id_guild)
@@ -127,3 +129,4 @@ class OnReadyEvent:
                 continue
             for id_channel in guild_state['channel_state_map']:
                 await ChannelService.init_channel(bot, guild_state['channel_state_map'][id_channel])
+        log.info("Track channels init done.")

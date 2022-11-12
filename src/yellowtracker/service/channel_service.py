@@ -1,4 +1,5 @@
 import logging
+import time
 import discord
 import collections
 from datetime import datetime, timedelta
@@ -35,21 +36,36 @@ class ChannelService:
         if ChannelService.validate_channel(bot, channel) is not None:
             return
         channel_state['id_message'] = None
-        msgs = await CoroutineUtil.run(ChannelService.get_channel_history(channel))
-        if msgs is None:
-            return
-        msgs_to_delete = []
-        for msg in msgs:
+        async for msg in channel.history(limit=10):
             if msg.type == discord.MessageType.default and msg.author == bot.user and channel_state['id_message'] is None:
                 channel_state['id_message'] = msg.id
                 await ChannelService.update_channel_message(bot, channel_state)
-                continue
-            msgs_to_delete.append(msg)
-        await CoroutineUtil.run(channel.delete_messages(msgs_to_delete))
+                break
+        await ChannelService.delete_msgs(bot, channel_state, channel)
 
     @staticmethod
-    async def get_channel_history(channel):
-        return [message async for message in channel.history(oldest_first=True)]
+    async def delete_msgs(bot, channel_state, channel):
+        msgs_to_delete = []
+        async for msg in channel.history(limit=10):
+            if ChannelService.is_msg_can_be_deleted(bot, channel_state, msg):
+                msgs_to_delete.append(msg)
+        if len(msgs_to_delete) > 0:
+            await CoroutineUtil.run(channel.delete_messages(msgs_to_delete))
+
+    @staticmethod
+    def is_msg_can_be_deleted(bot, channel_state, msg):
+        if channel_state['id_message'] is not None and channel_state['id_message'] == msg.id:
+            return False
+        if datetime.utcnow() - msg.created_at.replace(tzinfo=None) >= timedelta(days=14):
+            return False
+        msg_date = msg.created_at if msg.edited_at is None else msg.edited_at
+        if datetime.utcnow() - msg_date.replace(tzinfo=None) <= timedelta(seconds=bot.DEL_MSG_AFTER_SECS):
+            return False
+        return True
+
+    @staticmethod
+    async def get_channel_history(channel: discord.TextChannel):
+        return [message async for message in channel.history()]
 
     @staticmethod
     async def set_channel(bot: Bot, channel, type: TrackType):
@@ -118,6 +134,7 @@ class ChannelService:
 
     @staticmethod
     async def update_channel_message(bot: Bot, channel_state: dict):
+        local_tz = DateUtil.get_local_tzinfo()
         mobile = bot.guild_state_map[channel_state['id_guild']]['mobile']
         track_type = channel_state['type']
         embed = discord.Embed()
@@ -128,6 +145,7 @@ class ChannelService:
         remaining_times = []
         id_mob_first_entry = None
         cmp = 'r2' if track_type == TrackType.MVP else 'r1'
+
         for entry_state in channel_state['entry_state_list']:
             if entry_state[cmp] > -bot.TABLE_ENTRY_EXPIRATION_MINS:
                 remaining_time = TrackUtil.fmt_r1_r2(int(entry_state['r1']))
@@ -147,6 +165,7 @@ class ChannelService:
                     if track_type == TrackType.MVP:
                         maps.append(entry_state['entry']['map'])
                     remaining_times.append(remaining_time)
+
         if len(names) == 0:
             embed.add_field(name=':x:', value=f"{track_type.desc} list is empty", inline=False)
         else:
@@ -173,8 +192,7 @@ class ChannelService:
             for entry_log in channel_state['entry_log_list']:
                 if result != '':
                     result += '\n'
-                milliseconds = (entry_log['entry_time'] - datetime.now()) / timedelta(milliseconds=1)
-                result += '**[' + DateUtil.fmt_time_short(milliseconds) + ']**'
+                result += f"[<t:{int(time.mktime(entry_log['entry_time'].astimezone(tz=local_tz).timetuple()))}:R>]"
                 result += ' ' + entry_log['entry']['name']
                 if track_type == TrackType.MVP:
                     result += ' (' + entry_log['entry']['map'] + ')'
@@ -191,7 +209,7 @@ class ChannelService:
         message = None
         if channel_state['id_message'] is not None:
             try:
-                message = await channel.fetch_message(channel_state['id_message'])
+                message = await CoroutineUtil.run(channel.fetch_message(channel_state['id_message']))
             except discord.errors.NotFound:
                 pass
             except:
@@ -200,7 +218,7 @@ class ChannelService:
         if message is None:
             message = await CoroutineUtil.run(channel.send(embed=embed))
             if message is not None:
-                channel_state['id_message'] = message.id
+                channel_state['id_message'] = message.id  # type: ignore
         else:
             await CoroutineUtil.run(message.edit(embed=embed, content=''))
             await CoroutineUtil.run(message.clear_reactions())

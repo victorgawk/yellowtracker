@@ -58,7 +58,7 @@ class OnMessageEvent:
     @staticmethod
     async def sync(bot: Bot, tree: discord.app_commands.CommandTree, channel: discord.abc.Messageable):
         ts = time.time()
-        log.info(f"Beginning sync of {len(bot.guilds)} guilds.")
+        await CoroutineUtil.run(channel.send(f"Begin sync slash commands with {len(bot.guilds)} guilds."))
         for guild in bot.guilds:
             tree.copy_global_to(guild=guild)
             await CoroutineUtil.run(tree.sync(guild=guild))

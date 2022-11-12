@@ -5,7 +5,7 @@ from yellowtracker.util.coroutine_util import CoroutineUtil
 class CustomCommand:
 
     @staticmethod
-    async def custom(interaction: discord.Interaction, bot: Bot):
+    async def custom_cmd(interaction: discord.Interaction, bot: Bot):
         guild_state = bot.guild_state_map[interaction.guild_id]
         custom = not guild_state['custom']
         guild_state['custom'] = custom

@@ -2,7 +2,6 @@ import os
 import discord
 import asyncio
 import logging
-import tornado.web
 from yellowtracker.command.clean_command import CleanCommand
 from yellowtracker.command.custom_command import CustomCommand
 from yellowtracker.command.mobile_command import MobileCommand
@@ -23,10 +22,10 @@ from yellowtracker.event.on_ready_event import OnReadyEvent
 from yellowtracker.timer.event_timer import EventTimer
 from yellowtracker.timer.track_timer import TrackTimer
 
-discord.utils.setup_logging()
-log = logging.getLogger(__name__)
 bot = Bot(intents=discord.Intents.default())
 tree = discord.app_commands.CommandTree(bot)
+discord.utils.setup_logging()
+log = logging.getLogger(__name__)
 
 @tree.command(description = "Remove all tracked MVPs from the list")
 async def clean(interaction: discord.Interaction):
@@ -34,7 +33,7 @@ async def clean(interaction: discord.Interaction):
 
 @tree.command(description = "Enable/disable custom MVP respawn times")
 async def custom(interaction: discord.Interaction):
-    await CustomCommand.custom(interaction = interaction, bot = bot)
+    await CustomCommand.custom_cmd(interaction = interaction, bot = bot)
 
 @tree.command(description = "Enable/disable MVP list mobile layout")
 async def mobile(interaction: discord.Interaction):
@@ -54,7 +53,7 @@ async def settings(interaction: discord.Interaction):
 
 @tree.command(description = "Track a MVP that has been defeated")
 async def track(interaction: discord.Interaction, mvp: str, time: str | None = None):
-    await TrackCommand.track(interaction = interaction, bot = bot, mvp = mvp, entryTime = time)
+    await TrackCommand.track(interaction = interaction, bot = bot, mvp = mvp, user_time = time)
 
 @tree.command(description = "Undo MVP track channel definition")
 async def unsetminingchannel(interaction: discord.Interaction):
@@ -93,23 +92,20 @@ async def on_guild_remove(guild):
     await OnGuildRemoveEvent.on_guild_remove(guild = guild, bot = bot)
 
 async def run_bot(bot: Bot) -> None:
-    log.info("Starting bot.")
+    log.info("Start bot client.")
     if bot.BOT_USER_TOKEN is None:
         raise Exception("Bot token is missing")
     await bot.start(bot.BOT_USER_TOKEN)
 
-async def health_check_http_server() -> None:
-    port = 8080
-    log.info(f"Starting health check HTTP server on port {port}.")
-    class MainHandler(tornado.web.RequestHandler):
-        def get(self):
-            self.write("It works")
-    app = tornado.web.Application([(r"/", MainHandler)])
-    app.listen(port)
-    await asyncio.Event().wait()
+async def run_timer(bot: Bot) -> None:
+    log.info("Start timer.")
+    while True:
+        await EventTimer.timer(bot)
+        await TrackTimer.timer(bot)
+        await asyncio.sleep(bot.TIMER_DELAY_SECS)
 
 async def main():
-    return await asyncio.gather(run_bot(bot), health_check_http_server(), TrackTimer.timer(bot), EventTimer.timer(bot))
+    return await asyncio.gather(run_bot(bot), run_timer(bot))
 
 loop = asyncio.new_event_loop()
 loop.create_task(main())

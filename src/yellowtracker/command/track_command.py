@@ -11,7 +11,7 @@ from yellowtracker.service.entry_service import EntryService
 class TrackCommand:
 
     @staticmethod
-    async def track(interaction: discord.Interaction, bot: Bot, mvp: str, entryTime: str | None):
+    async def track(interaction: discord.Interaction, bot: Bot, mvp: str, user_time: str | None):
         validate_msg = ChannelService.validate_channel(bot, interaction.channel)
         if validate_msg is not None:
             await CoroutineUtil.run(interaction.response.send_message(validate_msg))
@@ -23,11 +23,11 @@ class TrackCommand:
             return
 
         mins_ago = 0
-        if entryTime is not None:
-            if entryTime.isnumeric():
-                mins_ago = int(entryTime)
-            elif len(entryTime) == 5 and entryTime[2] == ':':
-                hrs_mins = entryTime.split(':')
+        if user_time is not None:
+            if user_time.isnumeric():
+                mins_ago = int(user_time)
+            elif len(user_time) == 5 and user_time[2] == ':':
+                hrs_mins = user_time.split(':')
                 if len(hrs_mins) == 2 and hrs_mins[0].isnumeric() and hrs_mins[1].isnumeric():
                     hh = int(hrs_mins[0])
                     mm = int(hrs_mins[1])
@@ -48,7 +48,7 @@ class TrackCommand:
                 type.desc + ' "' + mvp + '" not found.'
             ))
         elif len(results) == 1:
-            bot_reply_msg = await TrackService.update_track_time(bot, channel_state, results[0], mins_ago, interaction.user.id)
+            bot_reply_msg = await TrackService.update_track_time(bot, channel_state, results[0], mins_ago, user_time, interaction.user.id)
             await CoroutineUtil.run(interaction.response.send_message(
                 bot_reply_msg
             ))
@@ -58,24 +58,25 @@ class TrackCommand:
             bot_reply_msg += '\n'
             bot_reply_msg += 'Select the ' + type.desc
             bot_reply_msg += ' that you want to track'
-            if entryTime is not None:
-                bot_reply_msg += ' with time ' + entryTime
+            if user_time is not None:
+                bot_reply_msg += ' with time ' + user_time
             bot_reply_msg += ':'
             await CoroutineUtil.run(interaction.response.send_message(
                 bot_reply_msg,
-                view=TrackView(bot = bot, opts = results, mins_ago = mins_ago, track_type = type)
+                view=TrackView(bot = bot, opts = results, mins_ago = mins_ago, user_time = user_time, track_type = type)
             ))
 
 class TrackView(discord.ui.View):
-    def __init__(self, *, timeout = 180, bot, opts, mins_ago, track_type):
+    def __init__(self, *, timeout = 180, bot, opts, mins_ago, user_time, track_type):
         super().__init__(timeout = timeout)
-        self.add_item(TrackSelect(bot, opts, mins_ago, track_type))
+        self.add_item(TrackSelect(bot, opts, mins_ago, user_time, track_type))
 
 class TrackSelect(discord.ui.Select):
-    def __init__(self, bot: Bot, opts, mins_ago, track_type):
+    def __init__(self, bot: Bot, opts, mins_ago, user_time, track_type):
         self.bot = bot
         self.opts = opts
         self.mins_ago = mins_ago
+        self.user_time = user_time
         self.track_type = track_type
         options = []
         for opt in self.opts:
@@ -90,5 +91,5 @@ class TrackSelect(discord.ui.Select):
         if guild_state is None:
             return
         channel_state = guild_state['channel_state_map'].get(interaction.channel_id)
-        bot_reply_msg = await TrackService.update_track_time(self.bot, channel_state, entry, self.mins_ago, interaction.user.id)
+        bot_reply_msg = await TrackService.update_track_time(self.bot, channel_state, entry, self.mins_ago, self.user_time, interaction.user.id)
         await CoroutineUtil.run(interaction.response.edit_message(content=bot_reply_msg, view=None))

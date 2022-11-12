@@ -90,37 +90,22 @@ class EventService:
         return hh_map
 
     @staticmethod
-    def get_next_evt(bot: Bot, type: str | None = None) -> dict | None:
+    def get_next_evt(bot: Bot, type: str | None = None) -> tuple[dict | None, bool]:
         dt_now = DateUtil.get_dt_now(bot.TIMEZONE)
         evts = EventService.get_evts(bot, type)
         next_evt = None
+        ongoing = False
         for evt in evts:
             if evt['dt_end'] < dt_now:
                 continue
             if next_evt is None:
                 next_evt = evt
             if evt['dt_begin'] <= dt_now <= evt['dt_end']: #ongoing
-                return next_evt
+                ongoing = True
+                break
             if evt['dt_begin'] < next_evt['dt_begin']: #next
                 next_evt = evt
-        return next_evt
-
-    @staticmethod
-    def get_next_evts(bot: Bot) -> tuple[list[dict], list[dict]]:
-        dt_now = DateUtil.get_dt_now(bot.TIMEZONE)
-        woe = EventService.get_next_evt(bot, "woe")
-        hh = EventService.get_next_evt(bot, "hh")
-        gmc = EventService.get_next_evt(bot, "gmc")
-        ongoing = []
-        not_ongoing = []
-        for evt in [woe, hh, gmc]:
-            if evt is None:
-                continue
-            if evt['dt_begin'] <= dt_now <= evt['dt_end']:
-                ongoing.append(evt)
-            else:
-                not_ongoing.append(evt)
-        return ongoing, not_ongoing
+        return next_evt, ongoing
 
     @staticmethod
     def is_ongoing(bot: Bot, evt: dict):
