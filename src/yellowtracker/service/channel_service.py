@@ -36,7 +36,7 @@ class ChannelService:
         if ChannelService.validate_channel(bot, channel) is not None:
             return
         channel_state['id_message'] = None
-        async for msg in channel.history(limit=10):
+        async for msg in channel.history():
             if msg.type == discord.MessageType.default and msg.author == bot.user and channel_state['id_message'] is None:
                 channel_state['id_message'] = msg.id
                 await ChannelService.update_channel_message(bot, channel_state)
@@ -46,7 +46,7 @@ class ChannelService:
     @staticmethod
     async def delete_msgs(bot, channel_state, channel):
         msgs_to_delete = []
-        async for msg in channel.history(limit=10):
+        async for msg in channel.history():
             if ChannelService.is_msg_can_be_deleted(bot, channel_state, msg):
                 msgs_to_delete.append(msg)
         if len(msgs_to_delete) > 0:
@@ -93,6 +93,7 @@ class ChannelService:
         }
         channel_state_map[channel.id] = channel_state
         await ChannelService.init_channel(bot, channel_state)
+        await ChannelService.update_channel_message(bot, channel_state)
         conn = await bot.pool_acquire()
         try:
             sql  = 'UPDATE guild '
@@ -209,7 +210,7 @@ class ChannelService:
         message = None
         if channel_state['id_message'] is not None:
             try:
-                message = await CoroutineUtil.run(channel.fetch_message(channel_state['id_message']))
+                message = await channel.fetch_message(channel_state['id_message'])
             except discord.errors.NotFound:
                 pass
             except:
@@ -218,7 +219,7 @@ class ChannelService:
         if message is None:
             message = await CoroutineUtil.run(channel.send(embed=embed))
             if message is not None:
-                channel_state['id_message'] = message.id  # type: ignore
+                channel_state['id_message'] = message.id
         else:
             await CoroutineUtil.run(message.edit(embed=embed, content=''))
             await CoroutineUtil.run(message.clear_reactions())
