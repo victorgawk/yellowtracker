@@ -12,12 +12,12 @@ __all__ = (
 
 class GmcToken(enum.Enum):
     SEIREN = "Seiren"
-    BOREAS = "Boreas"
     SUSHI = "Sushi"
-    MUUI = "Muui"
-    HOWL = "Howl"
     BLACKTALON = "BlackTalon"
+    BOREAS = "Boreas"
+    MUUI = "Muui"
     SHIRIS = "Shiris"
+    HOWL = "Howl"
     GEMINI = "Gemini"
     LANCE = "Lance"
     SAEN = "Saen"

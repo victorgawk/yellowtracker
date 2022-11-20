@@ -63,7 +63,7 @@ class GmcTokenSelect(discord.ui.Select):
 class GoToGmcTokensViewButton(discord.ui.Button):
     def __init__(self, gmcTokenUser: GmcTokenUser):
         self.gmcTokenUser = gmcTokenUser
-        super().__init__(style = discord.ButtonStyle.primary, emoji = "⬅️", label = "GoTo Back")
+        super().__init__(style = discord.ButtonStyle.primary, emoji = "⬅️", label = "Go Back")
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.edit_message(embed = self.gmcTokenUser.embed(), view = GmcTokensView(gmcTokenUser = self.gmcTokenUser))
 
@@ -140,7 +140,7 @@ class GoToEditAccountViewButton(discord.ui.Button):
     def __init__(self, gmcTokenUser: GmcTokenUser, accId: int):
         self.gmcTokenUser = gmcTokenUser
         self.accId = accId
-        super().__init__(style = discord.ButtonStyle.primary, emoji = "⬅️", label = "GoTo Back")
+        super().__init__(style = discord.ButtonStyle.primary, emoji = "⬅️", label = "Go Back")
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.edit_message(embed = self.gmcTokenUser.embed(), view = EditAccountView(gmcTokenUser = self.gmcTokenUser, accId = self.accId))
 
