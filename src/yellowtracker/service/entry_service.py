@@ -37,7 +37,11 @@ class EntryService:
         db_entry_log_list = await conn.fetch(sql)
         entry_list = bot.mvp_list if type == TrackType.MVP else bot.mining_list
         for db_entry_log in db_entry_log_list:
-            guild_state = bot.guild_state_map[db_entry_log['id_guild']]
+            guild_state = None
+            try:
+                guild_state = bot.guild_state_map[db_entry_log['id_guild']]
+            except:
+                pass
             if guild_state is None:
                 continue
             entry = next(

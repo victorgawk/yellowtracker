@@ -21,6 +21,7 @@ from yellowtracker.event.on_message_event import OnMessageEvent
 from yellowtracker.event.on_ready_event import OnReadyEvent
 from yellowtracker.timer.event_timer import EventTimer
 from yellowtracker.timer.track_timer import TrackTimer
+from yellowtracker.util.coroutine_util import CoroutineUtil
 
 bot = Bot(intents=discord.Intents.default())
 tree = discord.app_commands.CommandTree(bot)
@@ -100,9 +101,9 @@ async def run_bot(bot: Bot) -> None:
 async def run_timer(bot: Bot) -> None:
     log.info("Start timer.")
     while True:
-        await EventTimer.timer(bot)
-        await TrackTimer.timer(bot)
-        await asyncio.sleep(bot.TIMER_DELAY_SECS)
+        await CoroutineUtil.run(EventTimer.timer(bot))
+        await CoroutineUtil.run(TrackTimer.timer(bot))
+        await CoroutineUtil.run(asyncio.sleep(bot.TIMER_DELAY_SECS))
 
 async def main():
     return await asyncio.gather(run_bot(bot), run_timer(bot))
