@@ -18,8 +18,7 @@ class OnReadyEvent:
         log.info(f"Connected as {bot.user} on {len(bot.guilds)} servers.")
 
         if bot.GUILD_ID is not None:
-            print(bot.GUILD_ID)
-            log.info(f"Sync slash commands with one guild.")
+            log.info(f"Sync slash commands with guild id {bot.GUILD_ID}.")
             guild_to_sync = discord.Object(id=int(bot.GUILD_ID))
             tree.copy_global_to(guild=guild_to_sync)
             await CoroutineUtil.run(tree.sync(guild=guild_to_sync))
