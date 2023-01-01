@@ -90,7 +90,7 @@ class EventService:
         return hh_map
 
     @staticmethod
-    def get_next_evt(bot: Bot, type: str | None = None) -> tuple[dict | None, bool]:
+    def get_next_evt(bot: Bot, type: str = None) -> tuple[dict, bool]:
         dt_now = DateUtil.get_dt_now(bot.TIMEZONE)
         evts = EventService.get_evts(bot, type)
         next_evt = None
@@ -130,7 +130,7 @@ class EventService:
         return result
 
     @staticmethod
-    def get_evts(bot: Bot, type: str | None = None) -> list[dict]:
+    def get_evts(bot: Bot, type: str = None) -> list[dict]:
         tzinfo = timezone(bot.TIMEZONE)
         result = []
         for evt in WeeklyEvent.DATA:

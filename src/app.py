@@ -53,7 +53,7 @@ async def settings(interaction: discord.Interaction):
     await SettingsCommand.settings(interaction = interaction, bot = bot)
 
 @tree.command(description = "Track a MVP that has been defeated")
-async def track(interaction: discord.Interaction, mvp: str, time: str | None = None):
+async def track(interaction: discord.Interaction, mvp: str, time: str = None):
     await TrackCommand.track(interaction = interaction, bot = bot, mvp = mvp, user_time = time)
 
 @tree.command(description = "Undo MVP track channel definition")

@@ -39,5 +39,4 @@ class GmcTokensButton(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction):
         gmcTokenUser = gmctokens.GmcTokenUser(self.bot, interaction.user)
         await gmcTokenUser.initAccs()
-        await interaction.user.send(embed = gmcTokenUser.embed(), view = gmctokens.GmcTokensView(gmcTokenUser = gmcTokenUser))
-        await interaction.response.defer(thinking = False)
+        await interaction.response.send_message(ephemeral = True, embed = gmcTokenUser.embed(), view = gmctokens.GmcTokensView(gmcTokenUser = gmcTokenUser))

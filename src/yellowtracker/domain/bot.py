@@ -17,7 +17,7 @@ class Bot(discord.Client):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.pool: Pool | None = None
+        self.pool: Pool = None
         self.guild_state_map = {}
         self.mvp_list = []
         self.mining_list = []

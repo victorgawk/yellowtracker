@@ -8,25 +8,129 @@ from yellowtracker.domain.track_type import TrackType
 from yellowtracker.util.date_util import DateUtil
 from yellowtracker.util.coroutine_util import CoroutineUtil
 from yellowtracker.util.track_util import TrackUtil
+from yellowtracker.service.entry_service import EntryService
 
 log = logging.getLogger(__name__)
 
 class ChannelService:
 
     @staticmethod
-    def get_guild_from_bot(bot: Bot, id_guild: int) -> discord.Guild | None:
+    def get_guild_from_bot(bot: Bot, id_guild: int) -> discord.Guild:
         return next((x for x in bot.guilds if x.id == id_guild), None)
 
     @staticmethod
-    def get_channel_from_guild(guild: discord.Guild, id_channel: int) -> discord.TextChannel | None:
+    def get_channel_from_guild(guild: discord.Guild, id_channel: int) -> discord.TextChannel:
         return next((x for x in guild.text_channels if x.id == id_channel), None)
 
     @staticmethod
-    def get_channel_from_bot(bot: Bot, id_guild: int, id_channel: int) -> discord.TextChannel | None:
+    def get_channel_from_bot(bot: Bot, id_guild: int, id_channel: int) -> discord.TextChannel:
         guild = ChannelService.get_guild_from_bot(bot, id_guild)
         if guild is None:
             return None
         return ChannelService.get_channel_from_guild(guild, id_channel)
+
+    @staticmethod
+    async def track_entry(bot: Bot, channel_state: dict, channel: discord.TextChannel, user: discord.User, mvp: str, user_time: str):
+        mins_ago = 0
+        if user_time is not None:
+            if user_time.isnumeric():
+                mins_ago = int(user_time)
+            elif len(user_time) == 5 and user_time[2] == ':':
+                hrs_mins = user_time.split(':')
+                if len(hrs_mins) == 2 and hrs_mins[0].isnumeric() and hrs_mins[1].isnumeric():
+                    hh = int(hrs_mins[0])
+                    mm = int(hrs_mins[1])
+                    track_time = DateUtil.get_dt_now(bot.TIMEZONE)
+                    if hh > track_time.hour or (hh == track_time.hour and mm > track_time.minute):
+                        track_time -= timedelta(days=1)
+                    track_time = track_time.replace(hour=hh, minute=mm)
+                    td = DateUtil.get_dt_now(bot.TIMEZONE) - track_time
+                    mins_ago = int(td / timedelta(minutes=1))
+        if mins_ago < 0:
+            mins_ago = 0
+
+        type = channel_state['type']
+        results = EntryService.find_entry(bot, mvp, type)
+
+        if len(results) == 0:
+            await CoroutineUtil.run(channel.send(
+                type.desc + ' "' + mvp + '" not found.'
+            ))
+        elif len(results) == 1:
+            bot_reply_msg = await ChannelService.update_track_time(bot, channel_state, results[0], mins_ago, user_time, user.id)
+            await CoroutineUtil.run(channel.send(
+                bot_reply_msg
+            ))
+        else:
+            bot_reply_msg = 'More than one ' + type.desc
+            bot_reply_msg += ' starting with "' + mvp + '" has been found.\n'
+            bot_reply_msg += '\n'
+            bot_reply_msg += 'Select the ' + type.desc
+            bot_reply_msg += ' that you want to track'
+            if user_time is not None:
+                bot_reply_msg += ' with time ' + user_time
+            bot_reply_msg += ':'
+            await CoroutineUtil.run(channel.send(
+                bot_reply_msg,
+                view=TrackView(bot = bot, opts = results, mins_ago = mins_ago, user_time = user_time, track_type = type)
+            ))
+
+    @staticmethod
+    async def update_track_time(bot: Bot, channel_state: dict, entry, mins_ago: int, user_time: str, id_user: int):
+        conn = await bot.pool_acquire()
+        type = channel_state['type']
+        date = datetime.now()
+        track_time = date - timedelta(minutes=mins_ago)
+        try:
+            read_sql = f"SELECT * FROM {type.sql_desc}_guild WHERE id_{type.sql_desc}=$1 AND id_guild=$2"
+            entry_guild_db = await conn.fetch(read_sql, entry['id'], channel_state['id_guild'])
+            write_sql = f"INSERT INTO {type.sql_desc}_guild(id_{type.sql_desc},id_guild,track_time)VALUES($1,$2,$3)"
+            if len(entry_guild_db) > 0:
+                write_sql = f"UPDATE {type.sql_desc}_guild SET track_time=$3 WHERE id_{type.sql_desc}=$1 AND id_guild=$2"
+            await conn.execute(write_sql, entry['id'], channel_state['id_guild'], track_time)
+
+            read_sql = f"SELECT * FROM {type.sql_desc}_guild_log WHERE id_{type.sql_desc}=$1 AND id_guild=$2"
+            entry_guild_log_db = await conn.fetch(read_sql, entry['id'], channel_state['id_guild'])
+            write_sql = f"INSERT INTO {type.sql_desc}_guild_log(id_{type.sql_desc},id_guild,date,id_user)VALUES($1,$2,$3,$4)"
+            if len(entry_guild_log_db) > 0:
+                write_sql = f"UPDATE {type.sql_desc}_guild_log SET date=$3,id_user=$4 WHERE id_{type.sql_desc}=$1 AND id_guild=$2"
+            await conn.execute(write_sql, entry['id'], channel_state['id_guild'], date, id_user)
+
+            entry_log = None
+            for x in channel_state['entry_log_list']:
+                if x['entry'] == entry:
+                    entry_log = x
+                    break
+            if entry_log is not None:
+                channel_state['entry_log_list'].remove(entry_log)
+            channel_state['entry_log_list'].appendleft({
+                'entry': entry,
+                'date': date,
+                'id_user': id_user
+            })
+            while len(channel_state['entry_log_list']) > 3:
+                entry_log_to_remove = channel_state['entry_log_list'].pop()
+                del_sql = f"DELETE FROM {type.sql_desc}_guild_log WHERE id_{type.sql_desc}=$1 AND id_guild=$2"
+                await conn.execute(del_sql, entry_log_to_remove['entry']['id'], channel_state['id_guild'])
+        finally:
+            await bot.pool_release(conn)
+        entry_state = await TrackUtil.track_entry(bot, channel_state, entry, track_time)
+        await ChannelService.update_channel_message(bot, channel_state)
+        msg = entry_state['entry']['name']
+        if type == TrackType.MVP:
+            msg += ' (' 
+            msg += entry_state['entry']['map']
+            msg += ')'
+        msg += ' in '
+        msg += TrackUtil.fmt_r1_r2(int(entry_state['r1']))
+        if type == TrackType.MVP:
+            msg += ' to '
+            msg += TrackUtil.fmt_r1_r2(int(entry_state['r2']))
+        msg += ' minutes'
+        if user_time is not None:
+            msg += ' (time: ' + user_time + ')'
+        msg += '.'
+        return msg
 
     @staticmethod
     async def init_channel(bot: Bot, channel_state: dict):
@@ -231,15 +335,15 @@ class ChannelService:
                 log.error(f"Unexpected error.\n{CoroutineUtil.get_stack_str()}", exc_info=True)
                 return
         if message is None:
-            message = await CoroutineUtil.run(channel.send(embed=embed))
+            message = await CoroutineUtil.run(channel.send(embed=embed, view=ChannelMessageView(bot=bot, channel_state=channel_state)))
             if message is not None:
                 channel_state['id_message'] = message.id
         else:
-            await CoroutineUtil.run(message.edit(embed=embed, content=''))
+            await CoroutineUtil.run(message.edit(embed=embed, view=ChannelMessageView(bot=bot, channel_state=channel_state), content=''))
             await CoroutineUtil.run(message.clear_reactions())
 
     @staticmethod
-    def validate_channel(bot: Bot, channel) -> str | None:
+    def validate_channel(bot: Bot, channel) -> str:
         if channel is None:
             return 'Invalid channel.'
         member = next((x for x in channel.members if x == bot.user), None)
@@ -295,3 +399,65 @@ class SetChannelNoButton(discord.ui.Button):
         super().__init__(style=discord.ButtonStyle.secondary, label='No')
     async def callback(self, interaction: discord.Interaction):
         await CoroutineUtil.run(interaction.response.edit_message(view=None))
+
+class TrackView(discord.ui.View):
+    def __init__(self, *, timeout = 180, bot, opts, mins_ago, user_time, track_type):
+        super().__init__(timeout = timeout)
+        self.add_item(TrackSelect(bot, opts, mins_ago, user_time, track_type))
+
+class TrackSelect(discord.ui.Select):
+    def __init__(self, bot: Bot, opts, mins_ago, user_time, track_type):
+        self.bot = bot
+        self.opts = opts
+        self.mins_ago = mins_ago
+        self.user_time = user_time
+        self.track_type = track_type
+        options = []
+        for opt in self.opts:
+            if track_type == TrackType.MVP:
+                options.append(discord.SelectOption(label=opt["name"], description=opt["map"], value=opt["id"]))
+            else:
+                options.append(discord.SelectOption(label=opt["name"], value=opt["id"]))
+        super().__init__(placeholder="Select an option",options=options)
+    async def callback(self, interaction: discord.Interaction):
+        entry = next((x for x in self.opts if str(x["id"]) == self.values[0]), None)
+        guild_state = self.bot.guild_state_map.get(interaction.guild_id)
+        if guild_state is None:
+            return
+        channel_state = guild_state['channel_state_map'].get(interaction.channel_id)
+        bot_reply_msg = await ChannelService.update_track_time(self.bot, channel_state, entry, self.mins_ago, self.user_time, interaction.user.id)
+        await CoroutineUtil.run(interaction.response.edit_message(content=bot_reply_msg, view=None))
+
+class ChannelMessageView(discord.ui.View):
+    def __init__(self, *, timeout = None, bot: Bot, channel_state: dict):
+        self.bot = bot
+        self.channel_state = channel_state
+        super().__init__(timeout = timeout)
+        self.add_item(ChannelMessageTrackButton(bot = bot, channel_state = channel_state))
+
+class ChannelMessageTrackButton(discord.ui.Button):
+    def __init__(self, bot: Bot, channel_state: dict):
+        self.bot = bot
+        self.channel_state = channel_state
+        super().__init__(style = discord.ButtonStyle.primary, emoji = "➕", label = f"TRACK {channel_state['type'].desc}")
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_modal(ChannelMessageTrackModal(bot = self.bot, channel_state=self.channel_state))
+
+class ChannelMessageTrackModal(discord.ui.Modal):
+    def __init__(self, bot: Bot, channel_state: dict):
+        super().__init__(title = f"TRACK {channel_state['type'].desc}")
+        self.bot = bot
+        self.channel_state = channel_state
+        self.name_input = discord.ui.TextInput(label = "Name")
+        self.time_input = discord.ui.TextInput(label = "Time", required = False)
+        self.add_item(self.name_input)
+        self.add_item(self.time_input)
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(thinking = False)
+        name = self.name_input.value.strip()
+        if len(name) > 0:
+            user_time = self.time_input.value.strip()
+            if len(user_time) == 0:
+                user_time = None
+            await ChannelService.track_entry(self.bot, self.channel_state, interaction.channel, interaction.user, name, user_time)
+
