@@ -45,12 +45,13 @@ OBS: In addition to MVPs, Yellow Tracker can also be used to track mining locati
 
 Command | Description
 ------- | ---------
-**/track** `name` `time` | Report that MVP `name` died. The optional `time` argument can be used to determine the exact time the MVP died. Ommit this argument to report that the MVP died just now. If `time` argument is a single number then the MVP died `time` minutes ago. If `time` argument have the syntax `HH:MM` then the MVP died at `time` relative to the `TIMEZONE` environment variable.
+**/track** `name` `time` | Report that MVP `name` died. The optional `time` argument can be used to determine the exact time the MVP died. Ommit this argument to report that the MVP died just now. If `time` argument is a single number then the MVP died `time` minutes ago. If `time` argument have the syntax `HH:MM` then the MVP died at `time` relative to the `TIMEZONE` environment variable or a custom timezone defined with `/timezone` command.
 **/setmvpchannel** | Define the current channel as the MVP track channel.
 **/unsetmvpchannel** | Undo the MVP channel definition in the discord server.
 **/setminingchannel** | Define the current channel as the mining location track channel.
 **/unsetminingchannel** | Undo the mining location channel definition in the discord server.
 **/custom** | Enable/disable custom MVP respawn times (e.g. GTB respawn become 45 to 75 mins instead of 60 to 70 mins, Eddga become 105 to 135 instead of 120 to 130 mins, and so on).
+**/timezone** | Set a custom timezone for MVP tracking when the time is set in `HH:MM` syntax.
 **/mobile** | Enable/disable track table mobile layout.
 **/settings** | Show current bot settings.
 **/clean** | Remove all tracked MVPs/mining locations from the table (useful after a server reboot).
