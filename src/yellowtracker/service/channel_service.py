@@ -40,11 +40,15 @@ class ChannelService:
                 if len(hrs_mins) == 2 and hrs_mins[0].isnumeric() and hrs_mins[1].isnumeric():
                     hh = int(hrs_mins[0])
                     mm = int(hrs_mins[1])
-                    track_time = DateUtil.get_dt_now(bot.TIMEZONE)
+                    timezone = bot.TIMEZONE
+                    guild_state = bot.guild_state_map[channel.guild.id]
+                    if guild_state['timezone']:
+                        timezone = guild_state['timezone']
+                    track_time = DateUtil.get_dt_now(timezone)
                     if hh > track_time.hour or (hh == track_time.hour and mm > track_time.minute):
                         track_time -= timedelta(days=1)
                     track_time = track_time.replace(hour=hh, minute=mm)
-                    td = DateUtil.get_dt_now(bot.TIMEZONE) - track_time
+                    td = DateUtil.get_dt_now(timezone) - track_time
                     mins_ago = int(td / timedelta(minutes=1))
         if mins_ago < 0:
             mins_ago = 0

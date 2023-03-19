@@ -22,6 +22,7 @@ class SettingsCommand:
             else:
                 mining_channel = ChannelService.get_channel_from_guild(guild, channel_id)
         msg = f"Custom MVP Times: {Emoji.YES.value if guild_state['custom'] else Emoji.NO.value}\n"
+        msg = f"Timezone: {guild_state['timezone']}\n"
         msg += f"Mobile Layout: {Emoji.YES.value if guild_state['mobile'] else Emoji.NO.value}\n"
         msg += f"MVP Channel: {'' if mvp_channel is None else mvp_channel.mention}\n"
         msg += f"Mining Channel: {'' if mining_channel is None else mining_channel.mention}"

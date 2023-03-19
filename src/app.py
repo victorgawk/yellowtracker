@@ -9,6 +9,7 @@ from yellowtracker.command.setminingchannel_command import SetMiningChannelComma
 from yellowtracker.command.setmvpchannel_command import SetMvpChannelCommand
 from yellowtracker.command.settings_command import SettingsCommand
 from yellowtracker.command.track_command import TrackCommand
+from yellowtracker.command.timezone_command import TimezoneCommand
 from yellowtracker.command.unsetminingchannel_command import UnsetMiningChannelCommand
 from yellowtracker.command.unsetmvpchannel_command import UnsetMvpChannelCommand
 from yellowtracker.command.woe_command import WoeCommand
@@ -35,6 +36,10 @@ async def clean(interaction: discord.Interaction):
 @tree.command(description = "Enable/disable custom MVP respawn times")
 async def custom(interaction: discord.Interaction):
     await CustomCommand.custom_cmd(interaction = interaction, bot = bot)
+
+@tree.command(description = "Define a custom timezone for MVP tracking")
+async def timezone(interaction: discord.Interaction, timezone: str):
+    await TimezoneCommand.timezone_cmd(interaction = interaction, bot = bot, timezone = timezone)
 
 @tree.command(description = "Enable/disable MVP list mobile layout")
 async def mobile(interaction: discord.Interaction):
