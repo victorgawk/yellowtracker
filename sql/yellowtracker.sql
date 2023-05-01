@@ -25,6 +25,7 @@ CREATE TABLE guild (
     id bigint NOT NULL,
     custom boolean NOT NULL DEFAULT TRUE,
     mobile boolean NOT NULL DEFAULT FALSE,
+    timezone text,
     id_mvp_channel bigint,
     id_mining_channel bigint,
     id_member_channel bigint,
