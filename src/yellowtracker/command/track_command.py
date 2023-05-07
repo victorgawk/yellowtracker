@@ -16,5 +16,4 @@ class TrackCommand:
         if channel_state is None:
             await CoroutineUtil.run(interaction.response.send_message('This command can only be used in a track channel.'))
             return
-        await CoroutineUtil.run(interaction.response.defer(thinking = False))
-        await ChannelService.track_entry(bot, channel_state, interaction.channel, interaction.user, mvp, user_time)
+        await ChannelService.track_entry(bot, interaction, channel_state, mvp, user_time)

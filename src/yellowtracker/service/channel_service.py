@@ -30,7 +30,7 @@ class ChannelService:
         return ChannelService.get_channel_from_guild(guild, id_channel)
 
     @staticmethod
-    async def track_entry(bot: Bot, channel_state: dict, channel: discord.TextChannel, user: discord.User, mvp: str, user_time: str):
+    async def track_entry(bot: Bot, interaction: discord.Interaction, channel_state: dict, mvp: str, user_time: str):
         mins_ago = 0
         if user_time is not None:
             if user_time.isnumeric():
@@ -41,8 +41,8 @@ class ChannelService:
                     hh = int(hrs_mins[0])
                     mm = int(hrs_mins[1])
                     timezone = bot.TIMEZONE
-                    guild_state = bot.guild_state_map[channel.guild.id]
-                    if guild_state['timezone']:
+                    guild_state = bot.guild_state_map[interaction.channel.guild.id]
+                    if guild_state.get('timezone'):
                         timezone = guild_state['timezone']
                     track_time = DateUtil.get_dt_now(timezone)
                     if hh > track_time.hour or (hh == track_time.hour and mm > track_time.minute):
@@ -57,12 +57,12 @@ class ChannelService:
         results = EntryService.find_entry(bot, mvp, type)
 
         if len(results) == 0:
-            await CoroutineUtil.run(channel.send(
+            await CoroutineUtil.run(interaction.response.send_message(
                 type.desc + ' "' + mvp + '" not found.'
             ))
         elif len(results) == 1:
-            bot_reply_msg = await ChannelService.update_track_time(bot, channel_state, results[0], mins_ago, user_time, user.id)
-            await CoroutineUtil.run(channel.send(
+            bot_reply_msg = await ChannelService.update_track_time(bot, channel_state, results[0], mins_ago, user_time, interaction.user.id)
+            await CoroutineUtil.run(interaction.response.send_message(
                 bot_reply_msg
             ))
         else:
@@ -74,7 +74,7 @@ class ChannelService:
             if user_time is not None:
                 bot_reply_msg += ' with time ' + user_time
             bot_reply_msg += ':'
-            await CoroutineUtil.run(channel.send(
+            await CoroutineUtil.run(interaction.response.send_message(
                 bot_reply_msg,
                 view=TrackView(bot = bot, opts = results, mins_ago = mins_ago, user_time = user_time, track_type = type)
             ))
@@ -457,11 +457,10 @@ class ChannelMessageTrackModal(discord.ui.Modal):
         self.add_item(self.name_input)
         self.add_item(self.time_input)
     async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.defer(thinking = False)
         name = self.name_input.value.strip()
         if len(name) > 0:
             user_time = self.time_input.value.strip()
             if len(user_time) == 0:
                 user_time = None
-            await ChannelService.track_entry(self.bot, self.channel_state, interaction.channel, interaction.user, name, user_time)
+            await ChannelService.track_entry(self.bot, interaction, self.channel_state, name, user_time)
 
