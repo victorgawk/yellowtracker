@@ -88,12 +88,13 @@ class OnMessageEvent:
                     line += f"{channel_state['type'].sql_desc} | "
                     line += f"{guild} | "
                     line += f"{owner} | "
+                    line += f"{guild_state['timezone'] if guild_state.get('timezone') is not None else '-'} | "
                     line += f"{'Yes' if guild_state['custom'] else 'No'} | "
                     line += f"{'Yes' if guild_state['mobile'] else 'No'} | "
                     line += f"{len(channel_state['entry_state_list'])}"
                     lines.append(line)
         title = "Channels"
-        header = "Channel | Type | Guild | Owner | Custom | Mobile | Entries"
+        header = "Channel | Type | Guild | Owner | Custom | Mobile | Timezone | Entries"
         await OnMessageEvent.send_msg_paginated(bot, dm_channel, title, header, lines)
 
     @staticmethod
