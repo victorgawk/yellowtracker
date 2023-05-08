@@ -94,7 +94,7 @@ class OnMessageEvent:
                     line += f"{len(channel_state['entry_state_list'])}"
                     lines.append(line)
         title = "Channels"
-        header = "Channel | Type | Guild | Owner | Custom | Mobile | Timezone | Entries"
+        header = "Channel | Type | Guild | Owner | Timezone | Custom | Mobile | Entries"
         await OnMessageEvent.send_msg_paginated(bot, dm_channel, title, header, lines)
 
     @staticmethod

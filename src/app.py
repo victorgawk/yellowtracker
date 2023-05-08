@@ -12,6 +12,7 @@ from yellowtracker.command.track_command import TrackCommand
 from yellowtracker.command.timezone_command import TimezoneCommand
 from yellowtracker.command.unsetminingchannel_command import UnsetMiningChannelCommand
 from yellowtracker.command.unsetmvpchannel_command import UnsetMvpChannelCommand
+from yellowtracker.command.unsettimezone_command import UnsetTimezoneCommand
 from yellowtracker.command.woe_command import WoeCommand
 from yellowtracker.command.hh_command import HhCommand
 from yellowtracker.command.gmc_command import GmcCommand
@@ -40,6 +41,10 @@ async def custom(interaction: discord.Interaction):
 @tree.command(description = "Define a custom timezone for MVP tracking")
 async def timezone(interaction: discord.Interaction, timezone: str):
     await TimezoneCommand.timezone_cmd(interaction = interaction, bot = bot, timezone = timezone)
+
+@tree.command(description = "Undo custom timezone definition")
+async def unsettimezone(interaction: discord.Interaction):
+    await UnsetTimezoneCommand.unsettimezone_cmd(interaction = interaction, bot = bot)
 
 @tree.command(description = "Enable/disable MVP list mobile layout")
 async def mobile(interaction: discord.Interaction):

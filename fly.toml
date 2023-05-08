@@ -1,12 +1,13 @@
 app = "yellowtracker"
+primary_region = "gru"
 kill_signal = "SIGINT"
-kill_timeout = 1
+kill_timeout = "1s"
 
 [deploy]
   strategy = "immediate"
 
 [env]
-  DEL_MSG_AFTER_SECS = 10
-  TABLE_ENTRY_EXPIRATION_MINS = 20
-  TIMER_DELAY_SECS = 5
+  DEL_MSG_AFTER_SECS = "10"
+  TABLE_ENTRY_EXPIRATION_MINS = "20"
+  TIMER_DELAY_SECS = "5"
   TIMEZONE = "PST8PDT"
