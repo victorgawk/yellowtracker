@@ -45,7 +45,7 @@ OBS: In addition to MVPs, Yellow Tracker can also be used to track mining locati
 
 Command | Description
 ------- | ---------
-**/track** `name` `time` | Report that MVP `name` died. The optional `time` argument can be used to determine the exact time the MVP died. Ommit this argument to report that the MVP died just now. If `time` argument is a single number then the MVP died `time` minutes ago. If `time` argument have the syntax `HH:MM` then the MVP died at `time` relative to the `TIMEZONE` environment variable or a custom timezone defined with `/timezone` command.
+**/track** `name` `time` | Report that MVP `name` died. The optional `time` argument can be used to determine the exact time the MVP died. Ommit this argument to report that the MVP died just now. The `time` argument must have the syntax `HHMM` telling that the MVP died at `time` relative to the `TIMEZONE` environment variable or a custom timezone defined with `/timezone` command.
 **/setmvpchannel** | Define the current channel as the MVP track channel.
 **/unsetmvpchannel** | Undo the MVP channel definition in the discord server.
 **/setminingchannel** | Define the current channel as the mining location track channel.

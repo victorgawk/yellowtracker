@@ -33,25 +33,37 @@ class ChannelService:
     async def track_entry(bot: Bot, interaction: discord.Interaction, channel_state: dict, mvp: str, user_time: str):
         mins_ago = 0
         if user_time is not None:
-            if user_time.isnumeric():
-                mins_ago = int(user_time)
-            elif len(user_time) == 5 and user_time[2] == ':':
-                hrs_mins = user_time.split(':')
-                if len(hrs_mins) == 2 and hrs_mins[0].isnumeric() and hrs_mins[1].isnumeric():
-                    hh = int(hrs_mins[0])
-                    mm = int(hrs_mins[1])
-                    timezone = bot.TIMEZONE
-                    guild_state = bot.guild_state_map[interaction.channel.guild.id]
-                    if guild_state.get('timezone'):
-                        timezone = guild_state['timezone']
-                    track_time = DateUtil.get_dt_now(timezone)
-                    if hh > track_time.hour or (hh == track_time.hour and mm > track_time.minute):
-                        track_time -= timedelta(days=1)
-                    track_time = track_time.replace(hour=hh, minute=mm)
-                    td = DateUtil.get_dt_now(timezone) - track_time
-                    mins_ago = int(td / timedelta(minutes=1))
-        if mins_ago < 0:
-            mins_ago = 0
+            if user_time.isnumeric() and len(user_time) == 4:
+                hh = int(user_time[0:2])
+                mm = int(user_time[2:4])
+
+                if hh > 23:
+                    await CoroutineUtil.run(interaction.response.send_message(
+                        'HH must be between 00 and 23'
+                    ))
+                    return
+
+                if mm > 59:
+                    await CoroutineUtil.run(interaction.response.send_message(
+                        'MM must be between 00 and 59'
+                    ))
+                    return
+
+                timezone = bot.TIMEZONE
+                guild_state = bot.guild_state_map[interaction.channel.guild.id]
+                if guild_state.get('timezone'):
+                    timezone = guild_state['timezone']
+                track_time = DateUtil.get_dt_now(timezone)
+                if hh > track_time.hour or (hh == track_time.hour and mm > track_time.minute):
+                    track_time -= timedelta(days=1)
+                track_time = track_time.replace(hour=hh, minute=mm)
+                td = DateUtil.get_dt_now(timezone) - track_time
+                mins_ago = int(td / timedelta(minutes=1))
+            else:
+                await CoroutineUtil.run(interaction.response.send_message(
+                    'HHMM format expected for user time'
+                ))
+                return
 
         type = channel_state['type']
         results = EntryService.find_entry(bot, mvp, type)
