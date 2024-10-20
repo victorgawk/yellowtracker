@@ -1,13 +1,23 @@
-app = "yellowtracker"
-primary_region = "gru"
-kill_signal = "SIGINT"
-kill_timeout = "1s"
+# fly.toml app configuration file generated for yellowtracker on 2024-10-19T09:04:43-03:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'yellowtracker'
+primary_region = 'gig'
+kill_signal = 'SIGINT'
+kill_timeout = '1s'
+
+[build]
 
 [deploy]
-  strategy = "immediate"
+  strategy = 'immediate'
 
 [env]
-  DEL_MSG_AFTER_SECS = "10"
-  TABLE_ENTRY_EXPIRATION_MINS = "20"
-  TIMER_DELAY_SECS = "5"
-  TIMEZONE = "PST8PDT"
+  DEL_MSG_AFTER_SECS = '10'
+  TABLE_ENTRY_EXPIRATION_MINS = '20'
+  TIMER_DELAY_SECS = '5'
+  TIMEZONE = 'PST8PDT'
+
+[[vm]]
+  size = 'shared-cpu-1x'
