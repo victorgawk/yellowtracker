@@ -22,7 +22,7 @@ class TrackUtil:
                 entry_state['t2'] = entry['t2custom']
         entry_state['track_time'] = track_time
         TrackUtil.calc_remaining_time(entry_state, track_time, type)
-        channel_state['entry_state_list'].sort(key=lambda e : e['r1'])
+        channel_state['entry_state_list'].sort(key=lambda e : e['r1'] if type == TrackType.MINING else e['r2'])
         return entry_state
 
     @staticmethod

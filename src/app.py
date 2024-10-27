@@ -25,7 +25,10 @@ from yellowtracker.timer.event_timer import EventTimer
 from yellowtracker.timer.track_timer import TrackTimer
 from yellowtracker.util.coroutine_util import CoroutineUtil
 
-bot = Bot(intents=discord.Intents.default())
+intents = discord.Intents.default()
+intents.message_content = True
+bot = Bot(intents=intents)
+
 tree = discord.app_commands.CommandTree(bot)
 discord.utils.setup_logging()
 log = logging.getLogger(__name__)

@@ -28,6 +28,68 @@ class ChannelService:
         if guild is None:
             return None
         return ChannelService.get_channel_from_guild(guild, id_channel)
+    
+    @staticmethod
+    async def track_entry_msg(bot: Bot, message: discord.Message, channel_state: dict, mvp: str, user_time: str):
+        mins_ago = 0
+        if user_time is not None:
+            if user_time.isnumeric() and len(user_time) == 4:
+                hh = int(user_time[0:2])
+                mm = int(user_time[2:4])
+
+                if hh > 23:
+                    await CoroutineUtil.run(message.channel.send(
+                        'HH must be between 00 and 23'
+                    ))
+                    return
+
+                if mm > 59:
+                    await CoroutineUtil.run(message.channel.send(
+                        'MM must be between 00 and 59'
+                    ))
+                    return
+
+                timezone = bot.TIMEZONE
+                guild_state = bot.guild_state_map[message.channel.guild.id]
+                if guild_state.get('timezone'):
+                    timezone = guild_state['timezone']
+                track_time = DateUtil.get_dt_now(timezone)
+                if hh > track_time.hour or (hh == track_time.hour and mm > track_time.minute):
+                    track_time -= timedelta(days=1)
+                track_time = track_time.replace(hour=hh, minute=mm)
+                td = DateUtil.get_dt_now(timezone) - track_time
+                mins_ago = int(td / timedelta(minutes=1))
+            else:
+                await CoroutineUtil.run(message.channel.send(
+                    'HHMM format expected for user time'
+                ))
+                return
+
+        type = channel_state['type']
+        results = EntryService.find_entry(bot, mvp, type)
+
+        if len(results) == 0:
+            await CoroutineUtil.run(message.channel.send(
+                type.desc + ' "' + mvp + '" not found.'
+            ))
+        elif len(results) == 1:
+            bot_reply_msg = await ChannelService.update_track_time(bot, channel_state, results[0], mins_ago, user_time, message.author.id)
+            await CoroutineUtil.run(message.channel.send(
+                bot_reply_msg
+            ))
+        else:
+            bot_reply_msg = 'More than one ' + type.desc
+            bot_reply_msg += ' starting with "' + mvp + '" has been found.\n'
+            bot_reply_msg += '\n'
+            bot_reply_msg += 'Select the ' + type.desc
+            bot_reply_msg += ' that you want to track'
+            if user_time is not None:
+                bot_reply_msg += ' with time ' + user_time
+            bot_reply_msg += ':'
+            await CoroutineUtil.run(message.channel.send(
+                bot_reply_msg,
+                view=TrackView(bot = bot, opts = results, mins_ago = mins_ago, user_time = user_time, track_type = type)
+            ))
 
     @staticmethod
     async def track_entry(bot: Bot, interaction: discord.Interaction, channel_state: dict, mvp: str, user_time: str):

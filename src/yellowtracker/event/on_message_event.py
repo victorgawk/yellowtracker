@@ -2,10 +2,8 @@ import logging
 import discord
 import time
 from yellowtracker.domain.bot import Bot
-from yellowtracker.domain.track_type import TrackType
 from yellowtracker.service.channel_service import ChannelService
 from yellowtracker.util.coroutine_util import CoroutineUtil
-from yellowtracker.util.track_util import TrackUtil
 
 log = logging.getLogger(__name__)
 
@@ -13,8 +11,21 @@ class OnMessageEvent:
 
     @staticmethod
     async def on_message(bot: Bot, tree: discord.app_commands.CommandTree, message: discord.Message):
-        if not OnMessageEvent.validate_message(bot, message):
+        if bot.user.id == message.author.id:
+            return False
+
+        if type(message.channel) == discord.channel.TextChannel:
+            guild_state = bot.guild_state_map.get(message.guild.id)
+            if not guild_state:
+                return
+            channel_state = guild_state['channel_state_map'].get(message.channel.id)
+            if not channel_state:
+                return
+            await OnMessageEvent.track(bot, message, channel_state)
+
+        if not OnMessageEvent.is_dm_channel_message(bot, message):
             return
+        
         args = message.content.split(" ", 1)
         if args[0] == "!guilds":
             await OnMessageEvent.guilds(bot, message.channel)
@@ -126,7 +137,7 @@ class OnMessageEvent:
             await CoroutineUtil.run(dm_channel.send(embed=embed))
 
     @staticmethod
-    def validate_message(bot: Bot, message: discord.Message) -> bool:
+    def is_dm_channel_message(bot: Bot, message: discord.Message) -> bool:
         if not message.content.startswith("!"):
             return False
         if type(message.channel) != discord.DMChannel:
@@ -139,3 +150,31 @@ class OnMessageEvent:
         if bot_owner.id != message.author.id:
             return False
         return True
+
+    @staticmethod
+    def is_text_channel_message(bot: Bot, message: discord.Message) -> bool:
+        return type(message.channel) == discord.channel.TextChannel
+    
+    @staticmethod
+    async def track(bot: Bot, message: discord.Message, channel_state: dict) -> bool:
+        mvp = OnMessageEvent.get_mvp(message.content)
+        user_time = OnMessageEvent.get_user_time(message.content)
+        await ChannelService.track_entry_msg(bot, message, channel_state, mvp, user_time)
+
+    @staticmethod
+    def get_mvp(msg: str) -> str:
+        parts = msg.split(' ')
+        if len(parts) > 1:
+            last = parts[1]
+            if last.isnumeric() and len(last) == 4:
+                return parts[0]
+        return msg
+    
+    @staticmethod
+    def get_user_time(msg: str) -> str | None:
+        parts = msg.split(' ')
+        if len(parts) > 1:
+            last = parts[1]
+            if last.isnumeric() and len(last) == 4:
+                return parts[1]
+        return None
