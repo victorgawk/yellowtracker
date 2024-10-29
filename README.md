@@ -44,7 +44,7 @@ Once inside a MVP channel, there are three ways to track a MVP:
 - by pressing the **Track** button.
 - by using the **/track** command.
 
-There is a routine that periodically deletes all messages in the channel except the message with the MVP list (OBS: requires **Manage Channel** permission).
+There is a routine that periodically cleans the MVP channel in order to keep only the MVP list message (OBS: requires **Manage Channel** permission).
 
 OBS: In addition to MVPs, Yellow Tracker can also be used to track mining locations, where each location represents a collection with one or more maps (for instance, the mining location "Ice Dungeon (F1, F2, F3)" corresponds to the maps "ice_dun01", "ice_dun02" and "ice_dun03"). As well as MVPs, you need to define a track channel to be used exclusively for mining locations. To do this use the **/setminingchannel** command.
 
