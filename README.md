@@ -36,7 +36,7 @@ GUILD_ID=a single server ID to sync the slash commands (default = None)
   - **WARNING**: After you use this command, **ALL** messages from the channel (if there is any) will be erased and this will be irreversible!!! Be sure that you choose the right channel.
 
 Once inside a MVP channel, there are three ways to track a MVP:
-- by sending a message with `MVP_NAME_OR_ALIAS` or `MVP_NAME_OR_ALIAS HHMM` syntax (OBS: requires **Message Content** intent).
+- by sending a message with `MVP_NAME` or `MVP_NAME HHMM` syntax (OBS: requires **Message Content** intent).
   - Examples:
     - `amon ra 1234`
     - `atroce`
