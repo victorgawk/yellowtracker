@@ -32,7 +32,7 @@ GUILD_ID=a single server ID to sync the slash commands (default = None)
 
 ## Usage
 
-- Define a channel from your discord server to be used exclusively for MVP tracking (OBS: is strongly recommended that you use a new channel for this). This is done by using the **/setmvpchannel** command. The bot in this channel will keep a table with the tracked MVPs and their respective remaining times to respawn.
+Define a channel from your discord server to be used exclusively for MVP tracking (OBS: is strongly recommended that you use a new channel for this). This is done by using the **/setmvpchannel** command. The bot in this channel will keep a table with the tracked MVPs and their respective remaining times to respawn.
   - **WARNING**: After you use this command, **ALL** messages from the channel (if there is any) will be erased and this will be irreversible!!! Be sure that you choose the right channel.
 
 Once inside a MVP channel, there are three ways to track a MVP:
