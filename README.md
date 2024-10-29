@@ -6,7 +6,7 @@ Yellow Tracker is a discord bot to track MVPs.
 
 Prerequisites to run this application:
 
-- Python 3.10 or above
+- Python 3.13
 - A discord bot token
 - A PostgreSQL database
 
