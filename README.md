@@ -35,7 +35,16 @@ GUILD_ID=a single server ID to sync the slash commands (default = None)
 - Define a channel from your discord server to be used exclusively for MVP tracking (OBS: is strongly recommended that you use a new channel for this). This is done by using the **/setmvpchannel** command. The bot in this channel will keep a table with the tracked MVPs and their respective remaining times to respawn.
   - **WARNING**: After you use this command, **ALL** messages from the channel (if there is any) will be erased and this will be irreversible!!! Be sure that you choose the right channel.
 
-- Use the **/track** command to track a MVP that has been defeated. OBS.: can only be used inside a MVP track channel.
+Once inside a MVP channel, there are three ways to track a MVP:
+- by sending a message with `MVP_NAME_OR_ALIAS` or `MVP_NAME_OR_ALIAS HHMM` syntax (OBS: requires **Message Content** intent).
+  - Examples:
+    - `amon ra 1234`
+    - `atroce`
+    - `drac 1512`
+- by pressing the **Track** button.
+- by using the **/track** command.
+
+There is a routine that periodically deletes all messages in the channel except the message with the MVP list (OBS: requires **Manage Channel** permission).
 
 OBS: In addition to MVPs, Yellow Tracker can also be used to track mining locations, where each location represents a collection with one or more maps (for instance, the mining location "Ice Dungeon (F1, F2, F3)" corresponds to the maps "ice_dun01", "ice_dun02" and "ice_dun03"). As well as MVPs, you need to define a track channel to be used exclusively for mining locations. To do this use the **/setminingchannel** command.
 
