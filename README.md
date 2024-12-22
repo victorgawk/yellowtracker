@@ -71,11 +71,11 @@ Command | Description
 Name | Alias | Map | Respawn Time | Custom Respawn
 ---- | ----- | --- | ------------ | ---------------
 Amon Ra | - | moc_pryd06 | 60~70 mins | 55~75 mins |
-Atroce | - | ra_fild02 | 240~250 mins | 210~270 mins |
-Atroce | - | ra_fild03 | 180~190 mins | 150~210 mins |
-Atroce | - | ra_fild04 | 300~310 mins | 270~330 mins |
-Atroce | - | ve_fild01 | 180~190 mins | 150~210 mins |
-Atroce | - | ve_fild02 | 360~370 mins | 330~390 mins |
+Atroce | Atrora2 | ra_fild02 | 240~250 mins | 210~270 mins |
+Atroce | Atrora3 | ra_fild03 | 180~190 mins | 150~210 mins |
+Atroce | Atrora4 | ra_fild04 | 300~310 mins | 270~330 mins |
+Atroce | Atrove1 | ve_fild01 | 180~190 mins | 150~210 mins |
+Atroce | Atrove2 | ve_fild02 | 360~370 mins | 330~390 mins |
 Baphomet | - | prt_maze03 | 120~130 mins | 105~135 mins |
 Beelzebub | - | abbey03 | 720~730 mins | 540~840 mins |
 Bio3 MVP | - | lhz_dun03 | 100~130 mins | 100~130 mins |
@@ -130,7 +130,7 @@ Thanatos | - | thana_boss | 120~120 mins | 120~120 mins |
 Turtle General | TG | tur_dun04 | 60~70 mins | 55~75 mins |
 Valkyrie Randgris | VR | odin_tem03 | 480~840 mins | 480~840 mins |
 Vesper | - | jupe_core | 120~130 mins | 105~135 mins |
-White Lady | Bacsojin | lou_dun03 | 116~126 mins | 105~135 mins |
+White Lady | Bacsojin; WL | lou_dun03 | 116~126 mins | 105~135 mins |
 Wounded Morroc | WM | moc_fild22 | 720~900 mins | 720~900 mins |
 
 ### Mining locations:

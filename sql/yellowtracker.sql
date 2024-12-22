@@ -90,10 +90,15 @@ INSERT INTO global_parameter(id)VALUES(1);
 
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Amon Ra','moc_pryd06',60,70,55,75,1511);
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Atroce','ra_fild02',240,250,210,270,1785);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atrora2');
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Atroce','ra_fild03',180,190,150,210,1785);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atrora3');
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Atroce','ra_fild04',300,310,270,330,1785);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atrora4');
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Atroce','ve_fild01',180,190,150,210,1785);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atrove1');
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Atroce','ve_fild02',360,370,330,390,1785);
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Atrove2');
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Baphomet','prt_maze03',120,130,105,135,1039);
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Beelzebub','abbey03',720,730,540,840,1873);
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Bio3 MVP','lhz_dun03',100,130,NULL,NULL,1646);
@@ -176,6 +181,7 @@ INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'VR');
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Vesper','jupe_core',120,130,105,135,1685);
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('White Lady','lou_dun03',116,126,105,135,1630);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'Bacsojin');
+INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'WL');
 INSERT INTO mvp(name,map,t1,t2,t1custom,t2custom,id_mob)VALUES('Wounded Morroc','moc_fild22',720,900,NULL,NULL,1917);
 INSERT INTO mvp_alias(id_mvp,alias)VALUES(currval('mvp_seq'),'WM');
 
