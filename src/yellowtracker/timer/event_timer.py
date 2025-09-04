@@ -11,7 +11,8 @@ log = logging.getLogger(__name__)
 
 class EventTimer:
 
-    evt_types = ['hh', 'woe', 'gmc']
+    # evt_types = ['hh', 'woe', 'gmc']
+    evt_types = ['gmc']
     idx = 0
 
     @staticmethod

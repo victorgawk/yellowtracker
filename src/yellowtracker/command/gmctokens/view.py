@@ -48,7 +48,7 @@ class GmcTokenSelect(discord.ui.Select):
         options = []
         for gmcToken in GmcToken:
             options.append(discord.SelectOption(label = gmcToken.value, value = gmcToken.value, default = (gmcToken == self.gmcToken)))
-        super().__init__(placeholder = "Select a Token To Edit", options = options, min_values = 0)
+        super().__init__(placeholder = "Select a Token To Edit", options = options, min_values = 0, required = False)
     async def callback(self, interaction: discord.Interaction):
         gmcTokenSelected = None
         if len(self.values) > 0:
