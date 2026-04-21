@@ -1,5 +1,5 @@
 discord.py==2.6.3
 asyncpg==0.30.0
 pytz==2025.2
-python-dotenv==1.1.1
+python-dotenv==1.2.2
 audioop-lts==0.2.2
